@@ -16,11 +16,12 @@ RUN git clone --depth 1 https://github.com/hasaneyldrm/exercises-dataset.git /da
 
 ENV DATASET_ROOT=/dataset
 ENV DATASET_PATH=/dataset/data/exercises.json
-ENV NODE_ENV=production
 
-# Install dependencies first (better layer caching).
+# Install dependencies first (better layer caching). --include=dev is required:
+# the server runs via tsx (a devDependency), so dev deps must NOT be pruned,
+# even if the platform sets NODE_ENV=production during the build.
 COPY package.json ./
-RUN npm install
+RUN npm install --include=dev
 
 # Prisma schema + source.
 COPY prisma ./prisma
@@ -28,6 +29,9 @@ COPY tsconfig.json ./
 COPY src ./src
 
 RUN npx prisma generate
+
+# Set production mode only for the running server, after deps are installed.
+ENV NODE_ENV=production
 
 # Render injects PORT; the server reads it. Documented default:
 EXPOSE 3001
