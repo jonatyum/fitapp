@@ -39,43 +39,45 @@ export function ExerciseDetail({
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-grid">
-          <div className="modal-media">
-            <img src={mediaUrl(ex.gifUrl)} alt={ex.name} />
-          </div>
-          <div className="modal-body">
-            <button className="modal-close" onClick={onClose} aria-label={t("close")}>
-              ✕
-            </button>
-            <h2>{translateName(ex.name, lang)}</h2>
-
-            <div className="meta-row">
-              <span className="badge accent">{tv(ex.target)}</span>
-              <span className="badge soft">{tv(ex.bodyPart)}</span>
-              <span className="badge soft">{tv(ex.equipment)}</span>
+        <button className="modal-close" onClick={onClose} aria-label={t("close")}>
+          ✕
+        </button>
+        <div className="modal-scroll">
+          <div className="modal-grid">
+            <div className="modal-media">
+              <img src={mediaUrl(ex.gifUrl)} alt={ex.name} />
             </div>
+            <div className="modal-body">
+              <h2>{translateName(ex.name, lang)}</h2>
 
-            {secondary.length > 0 && (
-              <>
-                <div className="section-label">{t("secondaryLabel")}</div>
-                <div className="meta-row" style={{ margin: 0 }}>
-                  {secondary.map((m) => (
-                    <span key={m} className="badge soft">
-                      {tv(m)}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
+              <div className="meta-row">
+                <span className="badge accent">{tv(ex.target)}</span>
+                <span className="badge soft">{tv(ex.bodyPart)}</span>
+                <span className="badge soft">{tv(ex.equipment)}</span>
+              </div>
 
-            <div className="section-label">{t("steps")}</div>
-            <ol className="steps">
-              {steps.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ol>
+              {secondary.length > 0 && (
+                <>
+                  <div className="section-label">{t("secondaryLabel")}</div>
+                  <div className="meta-row" style={{ margin: 0 }}>
+                    {secondary.map((m) => (
+                      <span key={m} className="badge soft">
+                        {tv(m)}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
 
-            <p className="attribution">{ex.attribution}</p>
+              <div className="section-label">{t("steps")}</div>
+              <ol className="steps">
+                {steps.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+
+              <p className="attribution">{ex.attribution}</p>
+            </div>
           </div>
         </div>
       </div>

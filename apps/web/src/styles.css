@@ -403,9 +403,10 @@ ol, ul { list-style: none; }
 }
 @keyframes fade { from { opacity: 0; } }
 .modal {
+  position: relative;
   width: min(880px, 100%);
   max-height: 90vh;
-  overflow: auto;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -413,6 +414,8 @@ ol, ul { list-style: none; }
   animation: pop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes pop { from { transform: translateY(8px) scale(0.98); opacity: 0; } }
+/* Scrolls inside the modal so the close button (a sibling) stays pinned. */
+.modal-scroll { max-height: 90vh; overflow: auto; }
 .modal-grid { display: grid; grid-template-columns: 1fr 1fr; }
 .modal-media {
   background: radial-gradient(120% 120% at 50% 0%, var(--surface-2), var(--bg-2));
@@ -423,19 +426,24 @@ ol, ul { list-style: none; }
 }
 .modal-media img { width: 100%; max-width: 340px; }
 .modal-body { padding: 26px 26px 28px; position: relative; }
+/* Pinned to the top-right of the whole card (over the media on mobile), so it's
+   always the first thing in reach regardless of how the grid stacks. */
 .modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
   width: 34px;
   height: 34px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(4px);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
-.modal-close:hover { border-color: var(--border-strong); }
+.modal-close:hover { border-color: var(--border-strong); background: var(--surface); }
 .modal-body h2 {
   font-size: 22px;
   font-weight: 800;
@@ -927,16 +935,38 @@ ol, ul { list-style: none; }
   padding: 14px 16px 16px;
   margin-bottom: 14px;
 }
-.logblock-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.logblock-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background 0.12s;
+}
+.logblock-head:not(:disabled):hover { background: var(--surface-2); }
+.logblock-head:disabled { cursor: default; }
 .logblock-head img {
   width: 46px;
   height: 46px;
   border-radius: 9px;
   object-fit: cover;
   background: var(--bg-2);
+  flex: 0 0 auto;
 }
+.logblock-head > div { min-width: 0; flex: 1; }
 .logblock-head strong { display: block; font-size: 15px; font-weight: 680; text-transform: capitalize; }
 .logblock-head small { font-size: 12.5px; color: var(--text-3); }
+.logblock-view {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+  transition: color 0.12s;
+}
+.logblock-head:not(:disabled):hover .logblock-view { color: var(--accent); }
 
 .settable { width: 100%; border-collapse: collapse; }
 .settable th {
@@ -1084,6 +1114,9 @@ ol, ul { list-style: none; }
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 720px) {
+  /* Tighter gutters so content isn't squeezed on phones. */
+  .content { padding: 20px 16px 56px; }
+  .filterbar { padding: 12px 16px 10px; }
   .wizard-step legend { font-size: 21px; }
   .choice-grid { grid-template-columns: 1fr; }
   .choice.big { flex: 1; min-width: 0; }
@@ -1118,7 +1151,18 @@ ol, ul { list-style: none; }
 @media (max-width: 560px) {
   .brand span.tag-name { display: none; }
   .lang-trigger .lang-name { display: none; }
+  .content { padding: 16px 14px 44px; }
+  .filterbar { padding: 10px 14px 8px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  /* Scale down the oversized headings/numbers so they don't crowd or clip. */
+  .routine-title h2,
+  .logger-head h2,
+  .wizard-step legend { font-size: 20px; }
+  .stat-value { font-size: 21px; }
+  .stat { padding: 14px 15px; }
+  .ranklist li,
+  .historylist li { gap: 9px; }
+  .modal-body { padding: 20px 18px 22px; }
   /* Four nav tabs + language + theme + avatar no longer fit next to the
      search field; the filter bar covers search on this width. */
   .searchbox { display: none; }

@@ -253,6 +253,7 @@ export function App() {
           <WorkoutLogger
             routine={workout.routine}
             dayIndex={workout.dayIndex}
+            onOpenExercise={setSelected}
             onCancel={() => setWorkout(null)}
             onDone={() => {
               setWorkout(null);

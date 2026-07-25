@@ -96,6 +96,7 @@ export type UIKey =
   | "notesPlaceholder"
   | "emptyWorkout"
   | "elapsed"
+  | "viewExercise"
   // progress
   | "progress"
   | "statSessions"
@@ -200,6 +201,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "How did it go?",
     emptyWorkout: "Log at least one set before finishing.",
     elapsed: "Elapsed",
+    viewExercise: "View exercise",
     progress: "Progress",
     statSessions: "Workouts",
     statVolume: "Total volume",
@@ -302,6 +304,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "¿Cómo fue?",
     emptyWorkout: "Registra al menos una serie antes de terminar.",
     elapsed: "Tiempo",
+    viewExercise: "Ver ejercicio",
     progress: "Progreso",
     statSessions: "Entrenamientos",
     statVolume: "Volumen total",
@@ -404,6 +407,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "Com'è andata?",
     emptyWorkout: "Registra almeno una serie prima di terminare.",
     elapsed: "Tempo",
+    viewExercise: "Vedi esercizio",
     progress: "Progressi",
     statSessions: "Allenamenti",
     statVolume: "Volume totale",
@@ -506,6 +510,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "Comment ça s'est passé ?",
     emptyWorkout: "Enregistrez au moins une série avant de terminer.",
     elapsed: "Durée",
+    viewExercise: "Voir l'exercice",
     progress: "Progrès",
     statSessions: "Séances",
     statVolume: "Volume total",
@@ -608,6 +613,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "Nasıl geçti?",
     emptyWorkout: "Bitirmeden önce en az bir set kaydet.",
     elapsed: "Süre",
+    viewExercise: "Egzersizi gör",
     progress: "İlerleme",
     statSessions: "Antrenman",
     statVolume: "Toplam hacim",
@@ -710,6 +716,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "Как прошло?",
     emptyWorkout: "Запишите хотя бы один подход перед завершением.",
     elapsed: "Время",
+    viewExercise: "Показать упражнение",
     progress: "Прогресс",
     statSessions: "Тренировки",
     statVolume: "Общий объём",
@@ -812,6 +819,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "感觉怎么样？",
     emptyWorkout: "结束前请至少记录一组。",
     elapsed: "用时",
+    viewExercise: "查看动作",
     progress: "进度",
     statSessions: "训练次数",
     statVolume: "总训练量",
@@ -914,6 +922,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "कैसा रहा?",
     emptyWorkout: "समाप्त करने से पहले कम से कम एक सेट दर्ज करें।",
     elapsed: "समय",
+    viewExercise: "व्यायाम देखें",
     progress: "प्रगति",
     statSessions: "वर्कआउट",
     statVolume: "कुल वॉल्यूम",
@@ -1016,6 +1025,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "Jak poszło?",
     emptyWorkout: "Zapisz przynajmniej jedną serię przed zakończeniem.",
     elapsed: "Czas",
+    viewExercise: "Zobacz ćwiczenie",
     progress: "Postępy",
     statSessions: "Treningi",
     statVolume: "Objętość łącznie",
@@ -1118,6 +1128,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     notesPlaceholder: "어땠나요?",
     emptyWorkout: "완료하기 전에 최소 한 세트를 기록하세요.",
     elapsed: "경과",
+    viewExercise: "운동 보기",
     progress: "진행 상황",
     statSessions: "운동 횟수",
     statVolume: "총 볼륨",
