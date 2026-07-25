@@ -136,7 +136,19 @@ export function App() {
     <>
       <header className="topbar">
         <div className="brand">
-          💪 <span className="tag-name">FitApp</span>
+          <svg
+            className="brand-logo"
+            viewBox="0 0 32 32"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <rect x="10" y="14" width="12" height="4" rx="2" />
+            <rect x="5" y="9" width="4" height="14" rx="2" />
+            <rect x="2" y="12" width="3" height="8" rx="1.5" />
+            <rect x="23" y="9" width="4" height="14" rx="2" />
+            <rect x="27" y="12" width="3" height="8" rx="1.5" />
+          </svg>
+          <span className="tag-name">FitApp</span>
         </div>
 
         <div className="searchbox">
