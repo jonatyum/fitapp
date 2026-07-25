@@ -1,0 +1,61 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: fitapp-db
+    environment:
+      POSTGRES_USER: fitapp
+      POSTGRES_PASSWORD: fitapp
+      POSTGRES_DB: fitapp
+    ports:
+      - "5433:5432"
+    volumes:
+      - fitapp-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitapp -d fitapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./apps/api
+    container_name: fitapp-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fitapp:fitapp@db:5432/fitapp?schema=public
+      # Locally the pooled and direct URLs are the same Postgres.
+      DIRECT_URL: postgresql://fitapp:fitapp@db:5432/fitapp?schema=public
+      DATASET_PATH: /dataset/data/exercises.json
+      DATASET_ROOT: /dataset
+      PORT: "3001"
+      # dev-only secret; override in any real deployment
+      JWT_SECRET: dev-secret-change-me
+      # Optional: enables "Sign in with Google". Put the OAuth client ID in a
+      # .env file next to this compose file (see README). Empty = feature off.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    ports:
+      - "3001:3001"
+    volumes:
+      # dataset (media + json) mounted read-only from the sibling repo
+      - ../exercises-dataset:/dataset:ro
+      # source mounts for hot reload (node_modules stays from the image)
+      - ./apps/api/src:/app/src
+      - ./apps/api/prisma:/app/prisma
+
+  web:
+    build: ./apps/web
+    container_name: fitapp-web
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "5174:5173"
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/index.html:/app/index.html
+      - ./apps/web/vite.config.ts:/app/vite.config.ts
+
+volumes:
+  fitapp-db-data:

@@ -1,0 +1,28 @@
+# Render blueprint for the FitApp backend.
+# The database lives on Supabase, so no database is declared here — only the
+# API web service. Import this repo in Render → "Blueprints" and it picks this up.
+services:
+  - type: web
+    name: fitapp-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile.render
+    dockerContext: ./apps/api
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Supabase pooled connection (port 6543, add ?pgbouncer=true).
+      - key: DATABASE_URL
+        sync: false
+      # Supabase direct connection (port 5432) — used for `prisma db push`.
+      - key: DIRECT_URL
+        sync: false
+      # Generated once by Render; rotating it logs everyone out.
+      - key: JWT_SECRET
+        generateValue: true
+      # OAuth client id for "Sign in with Google" (leave blank to disable).
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Front-end origin(s) allowed by CORS, e.g. https://<user>.github.io
+      - key: CORS_ORIGIN
+        sync: false

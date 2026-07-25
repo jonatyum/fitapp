@@ -1,0 +1,36 @@
+# Production image for the FitApp API on Render.
+# Unlike the dev Dockerfile, this one bakes the dataset into the image
+# (cloned from GitHub) instead of relying on a local volume mount, and runs
+# the server without file-watching.
+FROM node:20-alpine
+
+WORKDIR /app
+
+# git is needed to fetch the exercises dataset (media + exercises.json).
+RUN apk add --no-cache git
+
+# Clone the dataset once at build time (shallow). Serves as both the media
+# root (/media/*) and the seed source. Pinned to the public repo.
+RUN git clone --depth 1 https://github.com/hasaneyldrm/exercises-dataset.git /dataset \
+  && rm -rf /dataset/.git
+
+ENV DATASET_ROOT=/dataset
+ENV DATASET_PATH=/dataset/data/exercises.json
+ENV NODE_ENV=production
+
+# Install dependencies first (better layer caching).
+COPY package.json ./
+RUN npm install
+
+# Prisma schema + source.
+COPY prisma ./prisma
+COPY tsconfig.json ./
+COPY src ./src
+
+RUN npx prisma generate
+
+# Render injects PORT; the server reads it. Documented default:
+EXPOSE 3001
+
+# On boot: sync the schema to the database, seed once (idempotent), then serve.
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && npm run seed && npm start"]

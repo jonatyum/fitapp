@@ -1,0 +1,162 @@
+// Prisma schema for FitApp
+// Postgres + pgvector (vector extension enabled for the future AI coach, Phase 3).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // Direct (non-pooled) connection used for `prisma db push` / migrations.
+  // On Supabase set this to the port-5432 URL; DATABASE_URL is the pooler (6543).
+  // Locally both point to the same Postgres (see docker-compose).
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
+}
+
+/// One fitness exercise, imported from the exercises-dataset (data/exercises.json).
+model Exercise {
+  id                String   @id
+  name              String
+  category          String
+  bodyPart          String   @map("body_part")
+  equipment         String
+  target            String
+  muscleGroup       String   @map("muscle_group")
+  secondaryMuscles  String[] @map("secondary_muscles")
+  instructions      Json
+  instructionSteps  Json     @map("instruction_steps")
+  image             String
+  gifUrl            String   @map("gif_url")
+  mediaId           String   @map("media_id")
+  attribution       String
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  routineExercises RoutineExercise[]
+  setLogs          SetLog[]
+
+  @@index([bodyPart])
+  @@index([equipment])
+  @@index([target])
+  @@map("exercises")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — accounts, generated routines and workout logging
+// ---------------------------------------------------------------------------
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  /// null for accounts that only sign in with Google
+  passwordHash String? @map("password_hash")
+  /// Google's stable subject id; set when the account is linked to Google
+  googleId  String?  @unique @map("google_id")
+  avatarUrl String?  @map("avatar_url")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  routines Routine[]
+  sessions WorkoutSession[]
+
+  @@map("users")
+}
+
+/// A training plan produced by the generator (or edited afterwards).
+model Routine {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  /// strength | hypertrophy | endurance | fatloss
+  goal        String
+  /// beginner | intermediate | advanced
+  level       String
+  daysPerWeek Int      @map("days_per_week")
+  /// split template id, e.g. "fullbody" | "upperlower" | "ppl"
+  split       String
+  /// equipment the user said they have (empty = everything)
+  equipment   String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days     RoutineDay[]
+  sessions WorkoutSession[]
+
+  @@index([userId])
+  @@map("routines")
+}
+
+model RoutineDay {
+  id        String   @id @default(cuid())
+  routineId String   @map("routine_id")
+  position  Int
+  /// label key translated in the UI, e.g. "push" | "fullbody-a"
+  label     String
+  /// muscle group ids shown as badges
+  focus     String[]
+
+  routine   Routine           @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
+  sessions  WorkoutSession[]
+
+  @@index([routineId])
+  @@map("routine_days")
+}
+
+model RoutineExercise {
+  id         String @id @default(cuid())
+  dayId      String @map("day_id")
+  exerciseId String @map("exercise_id")
+  position   Int
+  sets       Int
+  repsMin    Int    @map("reps_min")
+  repsMax    Int    @map("reps_max")
+  restSec    Int    @map("rest_sec")
+  /// muscle group slot this exercise was picked for
+  slot       String
+
+  day      RoutineDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  exercise Exercise   @relation(fields: [exerciseId], references: [id])
+
+  @@index([dayId])
+  @@map("routine_exercises")
+}
+
+/// One training session. Free sessions (no routine) are allowed.
+model WorkoutSession {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  routineId  String?   @map("routine_id")
+  dayId      String?   @map("day_id")
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  notes      String?
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routine Routine?    @relation(fields: [routineId], references: [id], onDelete: SetNull)
+  day     RoutineDay? @relation(fields: [dayId], references: [id], onDelete: SetNull)
+  sets    SetLog[]
+
+  @@index([userId, startedAt])
+  @@map("workout_sessions")
+}
+
+model SetLog {
+  id         String @id @default(cuid())
+  sessionId  String @map("session_id")
+  exerciseId String @map("exercise_id")
+  setNumber  Int    @map("set_number")
+  reps       Int
+  /// kilograms; 0 for body-weight work
+  weight     Float  @default(0)
+
+  session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id])
+
+  @@index([sessionId])
+  @@index([exerciseId])
+  @@map("set_logs")
+}
