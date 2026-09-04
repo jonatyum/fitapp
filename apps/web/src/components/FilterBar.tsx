@@ -14,7 +14,15 @@ export interface FilterState {
   equipment: string;
   /** comma-separated muscle keys set from the muscle map (target + secondary) */
   muscle: string;
+  /** "home" | "bodyweight" | "" — the train-at-home shortcuts */
+  tag: string;
 }
+
+/** Front-and-centre shortcuts: most people here train at home, not in a gym. */
+const TAGS = [
+  { id: "home", icon: "🏠", label: "tagHome" },
+  { id: "bodyweight", icon: "🤸", label: "tagBodyweight" },
+] as const;
 
 export function FilterBar({
   meta,
@@ -30,11 +38,24 @@ export function FilterBar({
   loading: boolean;
 }) {
   const { t, tv, lang } = useI18n();
-  const { bodyPart, target, equipment, muscle } = filters;
-  const hasFilters = !!(bodyPart || target || equipment || muscle);
+  const { bodyPart, target, equipment, muscle, tag } = filters;
+  const hasFilters = !!(bodyPart || target || equipment || muscle || tag);
 
   return (
     <div className="filterbar">
+      <div className="tagbar">
+        {TAGS.map((x) => (
+          <button
+            key={x.id}
+            className={`tagchip ${tag === x.id ? "on" : ""}`}
+            aria-pressed={tag === x.id}
+            onClick={() => set({ tag: tag === x.id ? "" : x.id })}
+          >
+            <span aria-hidden="true">{x.icon}</span> {t(x.label)}
+          </button>
+        ))}
+      </div>
+
       <div className="filterbar-row">
         {/* Body-part quick pills (horizontal scroll) */}
         <div className="pill-scroll">
@@ -89,7 +110,7 @@ export function FilterBar({
           <button
             className="clear-link"
             onClick={() =>
-              set({ bodyPart: "", target: "", equipment: "", muscle: "" })
+              set({ bodyPart: "", target: "", equipment: "", muscle: "", tag: "" })
             }
           >
             {t("clearAll")}

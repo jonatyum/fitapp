@@ -67,6 +67,7 @@ export interface GeneratedRoutine {
   daysPerWeek: number;
   split: string;
   equipment: string[];
+  place: Place;
   days: GeneratedDay[];
 }
 
@@ -99,6 +100,9 @@ export interface Routine {
   createdAt: string;
   days: RoutineDay[];
 }
+
+/** Where a plan is meant to be trained; drives the generator's equipment pool. */
+export type Place = "gym" | "home";
 
 export interface RoutineSummary extends Omit<Routine, "days"> {
   _count: { days: number; sessions: number };

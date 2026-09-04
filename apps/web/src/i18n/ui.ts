@@ -111,6 +111,15 @@ export type UIKey =
   | "noSessionsText"
   | "est1rm"
   | "setsN"
+  // train at home
+  | "tagHome"
+  | "tagBodyweight"
+  | "wizPlace"
+  | "placeHome"
+  | "placeHomeDesc"
+  | "placeGym"
+  | "placeGymDesc"
+  | "equipmentHintHome"
   // subscriptions
   | "navPlans"
   | "plansTitle"
@@ -296,6 +305,15 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     proOnlyTitle: "This is a Pro feature",
     proOnlyText: "The progress dashboard is part of the Pro plan. Your workouts keep being logged either way.",
     proSeePlans: "See plans",
+    // train at home
+    tagHome: "At home",
+    tagBodyweight: "No gym",
+    wizPlace: "Where do you train?",
+    placeHome: "At home",
+    placeHomeDesc: "Body weight, bands and dumbbells — nothing you don't own",
+    placeGym: "At the gym",
+    placeGymDesc: "Barbells, machines and cables available",
+    equipmentHintHome: "Tick only what you actually have. Nothing ticked = the whole home kit.",
   },
   es: {
     tagline: "Biblioteca de ejercicios",
@@ -351,7 +369,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     wizDays: "¿Cuántos días entrenas a la semana?",
     wizLevel: "¿Cuál es tu nivel?",
     wizEquipment: "¿Qué equipo tienes?",
-    equipmentHint: "Déjalo todo sin marcar para usar el catálogo completo.",
+    equipmentHint: "Marca lo que tengas a mano. Sin marcar nada usamos el catálogo completo.",
     selectAll: "Seleccionar todo",
     clearSel: "Quitar selección",
     generateRoutine: "Generar rutina",
@@ -363,7 +381,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     daysValue: "{n} días",
     myRoutine: "Mi rutina",
     noRoutineTitle: "Todavía no tienes una rutina",
-    noRoutineText: "Responde cuatro preguntas y armamos un plan con los 1.324 ejercicios del catálogo.",
+    noRoutineText: "Responde unas preguntas y te armamos un plan, entrenes en casa o en el gimnasio.",
     makeActive: "Activar",
     activeBadge: "Activa",
     otherRoutines: "Otras rutinas",
@@ -403,7 +421,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     // subscriptions
     navPlans: "Planes",
     plansTitle: "Planes",
-    plansSubtitle: "Entrena gratis. Pasa a Pro por las estadísticas.",
+    plansSubtitle: "Entrena gratis. Hazte Pro para ver tus estadísticas.",
     planFreeName: "Free",
     planProName: "Pro",
     planPerMonth: "/mes",
@@ -411,7 +429,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     planChoose: "Pasar a Pro",
     planFreeF1: "Catálogo completo de ejercicios y mapa muscular",
     planFreeF2: "Generador de rutinas",
-    planFreeF3: "Registro de entrenos e historial",
+    planFreeF3: "Registro de entrenamientos e historial",
     planProF1: "Todo lo de Free",
     planProF2: "Panel de progreso: volumen semanal y racha",
     planProF3: "Récords personales y 1RM estimado",
@@ -420,7 +438,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     subRenewsOn: "Válido hasta el {date}",
     subExpiredOn: "Venció el {date}",
     subRenew: "Renovar",
-    payTitle: "Paga con QR o transferencia",
+    payTitle: "Paga con QR Simple o transferencia",
     payStep1: "1. Transfiere {amount} a la cuenta de abajo.",
     payStep2: "2. Pon la referencia {ref} en el detalle de la transferencia.",
     payStep3: "3. Envía el comprobante a {contact}. Activamos Pro en menos de 24 h.",
@@ -438,7 +456,16 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     payNoProvider: "Ahora mismo no hay ningún medio de pago disponible.",
     payError: "No se pudo iniciar el pago. Inténtalo de nuevo.",
     proOnlyTitle: "Esta función es de Pro",
-    proOnlyText: "El panel de progreso es parte del plan Pro. Tus entrenos se siguen registrando igual.",
+    proOnlyText: "El panel de progreso es parte del plan Pro. Tus entrenamientos se siguen registrando igual.",
     proSeePlans: "Ver planes",
+    // train at home
+    tagHome: "En casa",
+    tagBodyweight: "Sin equipo",
+    wizPlace: "¿Dónde entrenas?",
+    placeHome: "En casa",
+    placeHomeDesc: "Peso corporal, ligas y mancuernas — nada que no tengas",
+    placeGym: "En el gimnasio",
+    placeGymDesc: "Con barras, máquinas y poleas disponibles",
+    equipmentHintHome: "Marca solo lo que tengas de verdad. Sin marcar nada usamos todo el kit de casa.",
   },
 };

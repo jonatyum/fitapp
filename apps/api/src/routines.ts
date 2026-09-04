@@ -4,9 +4,11 @@ import { requireAuth, userId } from "./auth.js";
 import {
   GOALS,
   LEVELS,
+  PLACES,
   generateRoutine,
   type Goal,
   type Level,
+  type Place,
 } from "./generator.js";
 
 interface GenerateBody {
@@ -14,6 +16,8 @@ interface GenerateBody {
   level?: string;
   daysPerWeek?: number;
   equipment?: string[];
+  /** "home" narrows the pool to the home kit; anything else means the gym. */
+  place?: string;
 }
 
 interface SaveExercise {
@@ -43,6 +47,7 @@ interface SaveBody {
 
 const isGoal = (v: unknown): v is Goal => GOALS.includes(v as Goal);
 const isLevel = (v: unknown): v is Level => LEVELS.includes(v as Level);
+const isPlace = (v: unknown): v is Place => PLACES.includes(v as Place);
 
 /** Days + exercises + the exercise rows the UI needs to render cards. */
 const routineInclude = {
@@ -62,7 +67,7 @@ export function registerRoutines(app: FastifyInstance) {
 
   // Preview a plan without persisting anything.
   app.post<{ Body: GenerateBody }>("/routines/generate", auth, async (req, reply) => {
-    const { goal, level, daysPerWeek, equipment } = req.body ?? {};
+    const { goal, level, daysPerWeek, equipment, place } = req.body ?? {};
     if (!isGoal(goal) || !isLevel(level)) {
       return reply.code(400).send({ error: "invalid_goal_or_level" });
     }
@@ -71,6 +76,9 @@ export function registerRoutines(app: FastifyInstance) {
       level,
       daysPerWeek: Number(daysPerWeek ?? 3),
       equipment: Array.isArray(equipment) ? equipment : [],
+      // An unrecognised value falls back to the gym rather than 400ing: the
+      // field is additive and old clients do not send it at all.
+      place: isPlace(place) ? place : "gym",
     });
   });
 
