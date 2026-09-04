@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { apiDeleteSession, apiSessions, apiStats, mediaUrl } from "../api";
+import { ApiError, apiDeleteSession, apiSessions, apiStats, mediaUrl } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 import { tDayLabel } from "../i18n/plan";
 import { translateName } from "../i18n/translateName";
 import type { Stats, WorkoutSession } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { ProOnly } from "./PlansView";
 
 /** Plot height in px — bars are sized in pixels, matching .chart-track in CSS. */
 const CHART_H = 130;
@@ -13,11 +14,13 @@ const CHART_H = 130;
 const compact = (n: number, lang: string) =>
   n >= 10_000 ? `${(n / 1000).toFixed(1)}k` : Math.round(n).toLocaleString(lang);
 
-export function ProgressView() {
+export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
   const { t, lang } = useI18n();
   const [stats, setStats] = useState<Stats | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
+  /** true when the API answered 402: the dashboard is Pro-only */
+  const [locked, setLocked] = useState(false);
   /** session queued for deletion, pending confirmation */
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
@@ -27,6 +30,10 @@ export function ProgressView() {
       const [s, h] = await Promise.all([apiStats(), apiSessions(20)]);
       setStats(s);
       setSessions(h);
+      setLocked(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) setLocked(true);
+      else throw err;
     } finally {
       setLoading(false);
     }
@@ -43,6 +50,8 @@ export function ProgressView() {
   };
 
   if (loading) return <div className="status">{t("loading")}</div>;
+
+  if (locked) return <ProOnly onSeePlans={onSeePlans} />;
 
   if (!stats || stats.totalSessions === 0) {
     return (

@@ -8,11 +8,13 @@
     "start": "tsx src/server.ts",
     "seed": "tsx src/seed.ts",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:migrate": "prisma migrate dev",
+    "deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
     "@fastify/jwt": "^9.0.1",
+    "@fastify/rate-limit": "^11.2.0",
     "@fastify/static": "^8.0.3",
     "@prisma/client": "^6.2.1",
     "bcryptjs": "^2.4.3",

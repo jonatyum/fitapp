@@ -6,8 +6,10 @@ import type { Prisma } from "@prisma/client";
 import { registerAuth } from "./auth.js";
 import { registerRoutines } from "./routines.js";
 import { registerSessions } from "./sessions.js";
+import { registerRateLimit, trustProxyOption } from "./rateLimit.js";
+import { registerBilling } from "./billing/routes.js";
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true, trustProxy: trustProxyOption() });
 
 // CORS_ORIGIN is a comma-separated allow-list of front-end origins
 // (e.g. "https://user.github.io"). Unset = reflect any origin (dev default).
@@ -16,9 +18,15 @@ const corsOrigin = corsEnv
   ? corsEnv.split(",").map((s) => s.trim()).filter(Boolean)
   : true;
 await app.register(cors, { origin: corsOrigin });
+
+// Must come before any route is declared: it tags each route with its limit
+// as the route is registered.
+await registerRateLimit(app);
+
 await registerAuth(app);
 registerRoutines(app);
 registerSessions(app);
+await registerBilling(app);
 
 // Serve the dataset media (images/ and videos/) at /media/*
 // e.g. an exercise's image "images/0001-xxx.jpg" -> /media/images/0001-xxx.jpg

@@ -1,12 +1,15 @@
 import { readFileSync } from "node:fs";
 import { prisma } from "./db.js";
 import type { RawExercise } from "./types.js";
+import { seedPlans } from "./billing/plans.js";
 
 // Path to the mounted dataset (see docker-compose: ../exercises-dataset -> /dataset).
 const DATASET_PATH =
   process.env.DATASET_PATH ?? "/dataset/data/exercises.json";
 
 async function main() {
+  await seedPlans();
+
   const existing = await prisma.exercise.count();
   if (existing > 0) {
     console.log(`[seed] ${existing} exercises already present — skipping.`);

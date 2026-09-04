@@ -14,14 +14,16 @@ import { AuthModal } from "./components/AuthModal";
 import { RoutineView } from "./components/RoutineView";
 import { WorkoutLogger } from "./components/WorkoutLogger";
 import { ProgressView } from "./components/ProgressView";
+import { PlansView } from "./components/PlansView";
 
-type View = "catalog" | "map" | "routine" | "progress";
+type View = "catalog" | "map" | "routine" | "progress" | "billing";
 
 const NAV_LABEL: Record<View, UIKey> = {
   catalog: "navCatalog",
   map: "navMap",
   routine: "navRoutine",
   progress: "navProgress",
+  billing: "navPlans",
 };
 
 const NAV_ICONS: Record<View, ReactNode> = {
@@ -52,6 +54,13 @@ const NAV_ICONS: Record<View, ReactNode> = {
   progress: (
     <path
       d="M4 19V9M10 19V5M16 19v-7M22 19H2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  ),
+  billing: (
+    <path
+      d="m12 3 2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.4 6.7 19.2l1.1-5.9L3.5 9.2l5.9-.8z"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -257,7 +266,15 @@ export function App() {
       )}
 
       {view === "progress" && !workout && (
-        <main className="content narrow">{user ? <ProgressView /> : signInPrompt}</main>
+        <main className="content narrow">
+          {user ? <ProgressView onSeePlans={() => setView("billing")} /> : signInPrompt}
+        </main>
+      )}
+
+      {view === "billing" && !workout && (
+        <main className="content narrow">
+          <PlansView onSignIn={() => setAuthOpen(true)} />
+        </main>
       )}
 
       {workout && (
