@@ -6,12 +6,16 @@
  * muscle "slots" filled with real exercises from the dataset.
  */
 import { prisma } from "./db.js";
+import { HOME_EQUIPMENT } from "./equipmentTags.js";
 
 export type Goal = "strength" | "hypertrophy" | "endurance" | "fatloss";
 export type Level = "beginner" | "intermediate" | "advanced";
+/** Where the plan will be trained. Drives the equipment pool and its ranking. */
+export type Place = "gym" | "home";
 
 export const GOALS: Goal[] = ["strength", "hypertrophy", "endurance", "fatloss"];
 export const LEVELS: Level[] = ["beginner", "intermediate", "advanced"];
+export const PLACES: Place[] = ["gym", "home"];
 
 /**
  * Slot -> dataset muscle names. The dataset is inconsistent between `target`
@@ -223,12 +227,43 @@ const ISOLATION_EQUIPMENT = [
   "kettlebell",
 ];
 
+/**
+ * Same idea for `place: "home"`, but the order is inverted: body weight and
+ * bands come first because they are what the trainee actually has. Reusing the
+ * gym ranking here would bury a push-up under a dumbbell press for someone who
+ * owns no dumbbells.
+ */
+const HOME_COMPOUND_EQUIPMENT = [
+  "body weight",
+  "dumbbell",
+  "kettlebell",
+  "band",
+  "resistance band",
+  "medicine ball",
+  "stability ball",
+];
+const HOME_ISOLATION_EQUIPMENT = [
+  "body weight",
+  "band",
+  "resistance band",
+  "dumbbell",
+  "kettlebell",
+  "medicine ball",
+  "stability ball",
+];
+
 const rankOf = (list: string[], equipment: string) => {
   const i = list.indexOf(equipment);
   return i === -1 ? 0 : (list.length - i) * 3;
 };
 
-function scoreExercise(ex: PoolExercise, keys: string[], compound: boolean, level: Level): number {
+function scoreExercise(
+  ex: PoolExercise,
+  keys: string[],
+  compound: boolean,
+  level: Level,
+  place: Place,
+): number {
   if (EXCLUDE_RE.test(ex.name)) return -Infinity;
   if (ADVANCED_RE.test(ex.name) && level !== "advanced") return -Infinity;
 
@@ -238,12 +273,12 @@ function scoreExercise(ex: PoolExercise, keys: string[], compound: boolean, leve
   if (compound) {
     score += COMPOUND_RE.test(ex.name) ? 45 : 0;
     score += ISOLATION_RE.test(ex.name) ? -20 : 0;
-    score += rankOf(COMPOUND_EQUIPMENT, ex.equipment);
+    score += rankOf(place === "home" ? HOME_COMPOUND_EQUIPMENT : COMPOUND_EQUIPMENT, ex.equipment);
     // Multi-joint work recruits helpers; a long secondary list corroborates it.
     score += 4 * Math.min(ex.secondaryMuscles.length, 4);
   } else {
     score += ISOLATION_RE.test(ex.name) ? 35 : 0;
-    score += rankOf(ISOLATION_EQUIPMENT, ex.equipment);
+    score += rankOf(place === "home" ? HOME_ISOLATION_EQUIPMENT : ISOLATION_EQUIPMENT, ex.equipment);
     score -= 5 * Math.min(ex.secondaryMuscles.length, 4);
   }
 
@@ -262,6 +297,8 @@ export interface GenerateInput {
   daysPerWeek: number;
   /** empty = assume everything is available */
   equipment: string[];
+  /** defaults to "gym", which is the behaviour this generator always had */
+  place?: Place;
 }
 
 export interface GeneratedExercise extends Prescription {
@@ -282,6 +319,7 @@ export interface GeneratedRoutine {
   daysPerWeek: number;
   split: string;
   equipment: string[];
+  place: Place;
   days: GeneratedDay[];
 }
 
@@ -289,8 +327,18 @@ export async function generateRoutine(input: GenerateInput): Promise<GeneratedRo
   const daysPerWeek = Math.min(6, Math.max(2, Math.round(input.daysPerWeek)));
   const split = SPLITS[daysPerWeek];
   const pool = await loadPool();
-  const equipment = input.equipment.length ? new Set(input.equipment) : null;
+  const place: Place = input.place === "home" ? "home" : "gym";
   const perDay = VOLUME[input.level];
+
+  // At home the kit is a hard boundary, so whatever the user picked is
+  // intersected with it; picking nothing that fits means the whole home kit.
+  const chosen = input.equipment.length ? new Set(input.equipment) : null;
+  let allowed: Set<string> | null = chosen;
+  if (place === "home") {
+    const home = new Set<string>(HOME_EQUIPMENT);
+    const narrowed = chosen ? [...chosen].filter((e) => home.has(e)) : [];
+    allowed = narrowed.length ? new Set(narrowed) : home;
+  }
 
   const days: GeneratedDay[] = split.days.map((tpl) => {
     const slots = tpl.slots.slice(0, perDay);
@@ -310,13 +358,16 @@ export async function generateRoutine(input: GenerateInput): Promise<GeneratedRo
           !usedInDay.has(ex.id) &&
           (keys.includes(ex.target) || ex.secondaryMuscles.some((m) => keys.includes(m))),
       );
-      // The equipment list is a preference, not a hard filter: if it leaves a
-      // slot with nothing to program, fall back to the full pool.
-      const available = equipment ? matches.filter((ex) => equipment.has(ex.equipment)) : matches;
-      const candidates = available.length ? available : matches;
+      const available = allowed ? matches.filter((ex) => allowed.has(ex.equipment)) : matches;
+
+      // In the gym the equipment list is a preference: an empty slot falls back
+      // to the full pool. At home it is a hard boundary — falling back would
+      // quietly prescribe a barbell row to someone who owns no barbell, which
+      // is worse than leaving the slot out.
+      const candidates = available.length ? available : place === "home" ? [] : matches;
 
       const ranked = candidates
-        .map((ex) => ({ ex, score: scoreExercise(ex, keys, compound, input.level) }))
+        .map((ex) => ({ ex, score: scoreExercise(ex, keys, compound, input.level, place) }))
         .filter((c) => c.score > -Infinity)
         .sort((a, b) => b.score - a.score)
         .slice(0, TOP_K);
@@ -340,7 +391,10 @@ export async function generateRoutine(input: GenerateInput): Promise<GeneratedRo
     level: input.level,
     daysPerWeek,
     split: split.id,
-    equipment: input.equipment,
+    // The kit actually used, not just what was ticked: this is what records a
+    // home plan as a home plan, without needing a new column.
+    equipment: allowed ? [...allowed] : input.equipment,
+    place,
     days,
   };
 }

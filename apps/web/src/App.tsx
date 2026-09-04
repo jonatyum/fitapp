@@ -90,6 +90,7 @@ export function App() {
     target: "",
     equipment: "",
     muscle: "",
+    tag: "",
   });
   const setFilter = (patch: Partial<FilterState>) =>
     setFilters((f) => ({ ...f, ...patch }));
@@ -116,7 +117,15 @@ export function App() {
   }, [q, filters, view]);
 
   const selectMuscle = (keys: string[]) => {
-    setFilters({ bodyPart: "", target: "", equipment: "", muscle: keys.join(",") });
+    // The home/no-gym tag survives: picking a muscle off the map is narrowing
+    // the search, not starting a new one.
+    setFilters((f) => ({
+      bodyPart: "",
+      target: "",
+      equipment: "",
+      muscle: keys.join(","),
+      tag: f.tag,
+    }));
     setView("catalog");
   };
 

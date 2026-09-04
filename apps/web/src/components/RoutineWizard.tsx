@@ -10,7 +10,7 @@ import {
   tLevelDesc,
   tSplit,
 } from "../i18n/plan";
-import type { GeneratedRoutine, Goal, Level, Meta, Routine } from "../types";
+import type { GeneratedRoutine, Goal, Level, Meta, Place, Routine } from "../types";
 import { DayCard } from "./DayCard";
 
 const DAY_CHOICES = [2, 3, 4, 5, 6];
@@ -31,8 +31,20 @@ const EQUIPMENT_CHOICES = [
   "resistance band",
 ];
 
-type Step = "goal" | "days" | "level" | "equipment" | "preview";
-const ORDER: Step[] = ["goal", "days", "level", "equipment", "preview"];
+type Step = "place" | "goal" | "days" | "level" | "equipment" | "preview";
+const ORDER: Step[] = ["place", "goal", "days", "level", "equipment", "preview"];
+
+/**
+ * Asked first, because it decides everything downstream: at home the generator
+ * treats the kit as a hard boundary instead of a preference.
+ */
+const PLACES = [
+  { id: "home", icon: "🏠", title: "placeHome", desc: "placeHomeDesc" },
+  { id: "gym", icon: "🏋️", title: "placeGym", desc: "placeGymDesc" },
+] as const;
+
+/** Preselected when "at home" is picked; the equipment step still refines it. */
+const HOME_KIT = ["body weight", "band", "resistance band", "dumbbell"];
 
 export function RoutineWizard({
   meta,
@@ -45,7 +57,8 @@ export function RoutineWizard({
 }) {
   const { t, tv, lang } = useI18n();
 
-  const [step, setStep] = useState<Step>("goal");
+  const [step, setStep] = useState<Step>("place");
+  const [place, setPlace] = useState<Place>("home");
   const [goal, setGoal] = useState<Goal>("hypertrophy");
   const [days, setDays] = useState(4);
   const [level, setLevel] = useState<Level>("beginner");
@@ -68,7 +81,7 @@ export function RoutineWizard({
     setBusy(true);
     setError(false);
     try {
-      const p = await apiGenerateRoutine({ goal, level, daysPerWeek: days, equipment });
+      const p = await apiGenerateRoutine({ goal, level, daysPerWeek: days, equipment, place });
       setPlan(p);
       if (!name) setName(`${tGoal(goal, lang)} · ${t("perWeek", { n: days })}`);
       setStep("preview");
@@ -108,6 +121,33 @@ export function RoutineWizard({
           ))}
         </div>
       </div>
+
+      {step === "place" && (
+        <fieldset className="wizard-step">
+          <legend>{t("wizPlace")}</legend>
+          <div className="choice-grid">
+            {PLACES.map((opt) => (
+              <button
+                key={opt.id}
+                className={`choice ${place === opt.id ? "on" : ""}`}
+                onClick={() => {
+                  setPlace(opt.id);
+                  // Sensible starting kit; the equipment step can still change it.
+                  setEquipment(
+                    opt.id === "home" ? HOME_KIT.filter((e) => choices.includes(e)) : [],
+                  );
+                  setStep("goal");
+                }}
+              >
+                <strong>
+                  <span aria-hidden="true">{opt.icon}</span> {t(opt.title)}
+                </strong>
+                <small>{t(opt.desc)}</small>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       {step === "goal" && (
         <fieldset className="wizard-step">
@@ -175,7 +215,7 @@ export function RoutineWizard({
       {step === "equipment" && (
         <fieldset className="wizard-step">
           <legend>{t("wizEquipment")}</legend>
-          <p className="hint">{t("equipmentHint")}</p>
+          <p className="hint">{t(place === "home" ? "equipmentHintHome" : "equipmentHint")}</p>
           <div className="check-grid">
             {choices.map((e) => (
               <button

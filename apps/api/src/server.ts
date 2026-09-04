@@ -8,6 +8,7 @@ import { registerRoutines } from "./routines.js";
 import { registerSessions } from "./sessions.js";
 import { registerRateLimit, trustProxyOption } from "./rateLimit.js";
 import { registerBilling } from "./billing/routes.js";
+import { EXERCISE_TAGS, isExerciseTag } from "./equipmentTags.js";
 
 const app = Fastify({ logger: true, trustProxy: trustProxyOption() });
 
@@ -58,19 +59,28 @@ interface ExerciseQuery {
   equipment?: string;
   target?: string;
   muscle?: string;
+  /** "home" | "bodyweight" — shorthand for a set of equipment values. */
+  tag?: string;
   limit?: string;
   offset?: string;
 }
 
 // Filtered, paginated list of exercises.
 app.get<{ Querystring: ExerciseQuery }>("/exercises", async (req) => {
-  const { q, bodyPart, equipment, target, muscle } = req.query;
+  const { q, bodyPart, equipment, target, muscle, tag } = req.query;
   const limit = Math.min(Number(req.query.limit ?? 60), 200);
   const offset = Number(req.query.offset ?? 0);
+
+  // An unknown tag is ignored rather than rejected: it is a discovery
+  // shortcut, not something a saved routine depends on.
+  const tagEquipment = isExerciseTag(tag) ? EXERCISE_TAGS[tag] : null;
 
   const where: Prisma.ExerciseWhereInput = {
     ...(bodyPart ? { bodyPart } : {}),
     ...(equipment ? { equipment } : {}),
+    // Goes through AND so it narrows an explicit `equipment` instead of
+    // colliding with it on the same key.
+    ...(tagEquipment ? { AND: [{ equipment: { in: [...tagEquipment] } }] } : {}),
     ...(target ? { target } : {}),
     // `muscle` matches the primary target OR any secondary muscle — used by the
     // interactive muscle map. Accepts a comma-separated list of synonyms

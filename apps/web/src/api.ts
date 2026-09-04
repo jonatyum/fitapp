@@ -8,6 +8,7 @@ import type {
   Level,
   Meta,
   Payment,
+  Place,
   Routine,
   RoutineSummary,
   Stats,
@@ -29,6 +30,8 @@ export interface ExerciseFilters {
   equipment?: string;
   target?: string;
   muscle?: string;
+  /** "home" | "bodyweight" — shorthand for a set of equipment values */
+  tag?: string;
   limit?: number;
   offset?: number;
 }
@@ -130,6 +133,7 @@ export interface GenerateInput {
   level: Level;
   daysPerWeek: number;
   equipment: string[];
+  place: Place;
 }
 
 export const apiGenerateRoutine = (input: GenerateInput) =>
