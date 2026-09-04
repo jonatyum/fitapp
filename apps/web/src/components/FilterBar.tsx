@@ -6,14 +6,6 @@ import { FilterDropdown } from "./FilterDropdown";
 const ALL_LABEL: Record<Lang, string> = {
   en: "All",
   es: "Todos",
-  it: "Tutti",
-  fr: "Tous",
-  tr: "Tümü",
-  ru: "Все",
-  zh: "全部",
-  hi: "सभी",
-  pl: "Wszystkie",
-  ko: "전체",
 };
 
 export interface FilterState {

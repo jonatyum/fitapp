@@ -10,14 +10,6 @@ import type { Lang } from "../i18n/languages";
 const MAP_LABELS: Record<Lang, { front: string; back: string; hint: string }> = {
   en: { front: "Front", back: "Back", hint: "Hover a muscle" },
   es: { front: "Frente", back: "Espalda", hint: "Pasa por un músculo" },
-  it: { front: "Fronte", back: "Schiena", hint: "Passa su un muscolo" },
-  fr: { front: "Face", back: "Dos", hint: "Survole un muscle" },
-  tr: { front: "Ön", back: "Arka", hint: "Bir kasın üzerine gel" },
-  ru: { front: "Спереди", back: "Сзади", hint: "Наведите на мышцу" },
-  zh: { front: "正面", back: "背面", hint: "将鼠标移到肌肉上" },
-  hi: { front: "सामने", back: "पीछे", hint: "मांसपेशी पर ले जाएँ" },
-  pl: { front: "Przód", back: "Tył", hint: "Najedź na mięsień" },
-  ko: { front: "정면", back: "후면", hint: "근육 위에 올려보세요" },
 };
 
 /**
