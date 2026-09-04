@@ -14,7 +14,7 @@ services:
       # Supabase pooled connection (port 6543, add ?pgbouncer=true).
       - key: DATABASE_URL
         sync: false
-      # Supabase direct connection (port 5432) — used for `prisma db push`.
+      # Supabase direct connection (port 5432) — used by `prisma migrate deploy`.
       - key: DIRECT_URL
         sync: false
       # Generated once by Render; rotating it logs everyone out.
@@ -25,4 +25,44 @@ services:
         sync: false
       # Front-end origin(s) allowed by CORS, e.g. https://<user>.github.io
       - key: CORS_ORIGIN
+        sync: false
+      # Render terminates TLS in front of the container, so the client IP has
+      # to come from X-Forwarded-For or every request would share a single
+      # rate-limit bucket. Narrow this to Render's proxy CIDRs if they are ever
+      # published — "true" trusts the whole chain, which a client can pad.
+      - key: TRUST_PROXY
+        value: "true"
+      # Rate limits (see .env.example). Unset = the API's defaults:
+      # 8/min per IP on the auth endpoints, 300/min elsewhere,
+      # 1000/min on /media/*, /health unlimited.
+      - key: AUTH_RATE_LIMIT_MAX
+        sync: false
+      - key: RATE_LIMIT_MAX
+        sync: false
+      - key: MEDIA_RATE_LIMIT_MAX
+        sync: false
+      # Subscriptions. Emails allowed to confirm manual payments.
+      - key: ADMIN_EMAILS
+        sync: false
+      # manual-qr provider: the account users transfer to. Without
+      # QR_ACCOUNT_NUMBER and QR_CONTACT the provider stays disabled.
+      - key: QR_BANK_NAME
+        sync: false
+      - key: QR_ACCOUNT_NAME
+        sync: false
+      - key: QR_ACCOUNT_NUMBER
+        sync: false
+      - key: QR_IMAGE_URL
+        sync: false
+      - key: QR_CONTACT
+        sync: false
+      # Polar provider — prepared but OFF. Filling these three in is what turns
+      # it on; read src/billing/polar.ts first, its API calls are unverified.
+      - key: POLAR_ACCESS_TOKEN
+        sync: false
+      - key: POLAR_WEBHOOK_SECRET
+        sync: false
+      - key: POLAR_PRODUCT_ID_PRO
+        sync: false
+      - key: POLAR_SUCCESS_URL
         sync: false

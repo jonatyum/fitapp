@@ -1,13 +1,17 @@
 import type {
+  BillingCatalog,
+  CheckoutResult,
   Exercise,
   ExerciseList,
   GeneratedRoutine,
   Goal,
   Level,
   Meta,
+  Payment,
   Routine,
   RoutineSummary,
   Stats,
+  Subscription,
   User,
   WorkoutSession,
 } from "./types";
@@ -192,3 +196,23 @@ export const apiDeleteSession = (id: string) =>
   request<void>(`/sessions/${id}`, { method: "DELETE" });
 
 export const apiStats = () => request<Stats>("/stats");
+
+// Subscriptions
+
+/** Public: the plan catalog and which ways to pay this deployment offers. */
+export const apiBillingPlans = () => request<BillingCatalog>("/billing/plans");
+
+export const apiSubscription = () => request<Subscription>("/billing/subscription");
+
+/** Opens a charge, or hands back the pending one if the user already has it. */
+export const apiCheckout = (planCode: string, provider?: string) =>
+  request<CheckoutResult>("/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ planCode, ...(provider ? { provider } : {}) }),
+  });
+
+export const apiPayments = () => request<Payment[]>("/billing/payments");
+
+/** Re-reads one payment, asking the provider when it has an API of its own. */
+export const apiPayment = (reference: string) =>
+  request<Payment>(`/billing/payments/${reference}`);

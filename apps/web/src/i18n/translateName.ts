@@ -2,9 +2,6 @@ import type { Lang } from "./languages";
 import { VOCAB } from "./vocab";
 import { NAME_TOKENS } from "./nameTokens";
 
-// Languages that don't separate words with spaces.
-const NO_SPACE = new Set<Lang>(["zh"]);
-
 type NonEn = Exclude<Lang, "en">;
 
 /** Look up a single lowercase token, with a naive plural fallback. */
@@ -30,7 +27,7 @@ function translateCore(core: string, lang: NonEn): string {
       .split("-")
       .map((p) => lookup(p, lang) ?? p)
       .filter(Boolean)
-      .join(NO_SPACE.has(lang) ? "" : "-");
+      .join("-");
   }
   return core; // fallback: keep English
 }
@@ -59,6 +56,6 @@ export function translateName(name: string, lang: Lang): string {
     })
     .filter(Boolean);
 
-  const joined = out.join(NO_SPACE.has(lang) ? "" : " ");
+  const joined = out.join(" ");
   return joined.charAt(0).toUpperCase() + joined.slice(1);
 }

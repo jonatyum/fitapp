@@ -34,6 +34,32 @@ services:
       # Optional: enables "Sign in with Google". Put the OAuth client ID in a
       # .env file next to this compose file (see README). Empty = feature off.
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Rate limiting: override from the .env file next to this compose file
+      # (see .env.example). Empty = the defaults baked into the API.
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-}
+      AUTH_RATE_LIMIT_WINDOW: ${AUTH_RATE_LIMIT_WINDOW:-}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-}
+      MEDIA_RATE_LIMIT_MAX: ${MEDIA_RATE_LIMIT_MAX:-}
+      MEDIA_RATE_LIMIT_WINDOW: ${MEDIA_RATE_LIMIT_WINDOW:-}
+      # No proxy in front of the API locally, so req.ip is already the client.
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      WEBHOOK_RATE_LIMIT_MAX: ${WEBHOOK_RATE_LIMIT_MAX:-}
+      # Subscriptions: admins and the manual-qr account details (see
+      # .env.example). Without QR_ACCOUNT_NUMBER + QR_CONTACT the provider stays
+      # disabled and the plans screen shows no way to pay.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      PAYMENT_PENDING_HOURS: ${PAYMENT_PENDING_HOURS:-}
+      QR_BANK_NAME: ${QR_BANK_NAME:-}
+      QR_ACCOUNT_NAME: ${QR_ACCOUNT_NAME:-}
+      QR_ACCOUNT_NUMBER: ${QR_ACCOUNT_NUMBER:-}
+      QR_IMAGE_URL: ${QR_IMAGE_URL:-}
+      QR_CONTACT: ${QR_CONTACT:-}
+      # Polar stays off until all three are set (see .env.example).
+      POLAR_ACCESS_TOKEN: ${POLAR_ACCESS_TOKEN:-}
+      POLAR_WEBHOOK_SECRET: ${POLAR_WEBHOOK_SECRET:-}
+      POLAR_PRODUCT_ID_PRO: ${POLAR_PRODUCT_ID_PRO:-}
+      POLAR_SUCCESS_URL: ${POLAR_SUCCESS_URL:-}
     ports:
       - "3001:3001"
     volumes:

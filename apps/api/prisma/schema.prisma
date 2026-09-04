@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  // Direct (non-pooled) connection used for `prisma db push` / migrations.
+  // Direct (non-pooled) connection used for migrations (`prisma migrate`).
   // On Supabase set this to the port-5432 URL; DATABASE_URL is the pooler (6543).
   // Locally both point to the same Postgres (see docker-compose).
   directUrl  = env("DIRECT_URL")
@@ -18,21 +18,21 @@ datasource db {
 
 /// One fitness exercise, imported from the exercises-dataset (data/exercises.json).
 model Exercise {
-  id                String   @id
-  name              String
-  category          String
-  bodyPart          String   @map("body_part")
-  equipment         String
-  target            String
-  muscleGroup       String   @map("muscle_group")
-  secondaryMuscles  String[] @map("secondary_muscles")
-  instructions      Json
-  instructionSteps  Json     @map("instruction_steps")
-  image             String
-  gifUrl            String   @map("gif_url")
-  mediaId           String   @map("media_id")
-  attribution       String
-  createdAt         DateTime @default(now()) @map("created_at")
+  id               String   @id
+  name             String
+  category         String
+  bodyPart         String   @map("body_part")
+  equipment        String
+  target           String
+  muscleGroup      String   @map("muscle_group")
+  secondaryMuscles String[] @map("secondary_muscles")
+  instructions     Json
+  instructionSteps Json     @map("instruction_steps")
+  image            String
+  gifUrl           String   @map("gif_url")
+  mediaId          String   @map("media_id")
+  attribution      String
+  createdAt        DateTime @default(now()) @map("created_at")
 
   routineExercises RoutineExercise[]
   setLogs          SetLog[]
@@ -48,18 +48,20 @@ model Exercise {
 // ---------------------------------------------------------------------------
 
 model User {
-  id String @id @default(cuid())
-  email String @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   /// null for accounts that only sign in with Google
-  passwordHash String? @map("password_hash")
+  passwordHash String?  @map("password_hash")
   /// Google's stable subject id; set when the account is linked to Google
-  googleId  String?  @unique @map("google_id")
-  avatarUrl String?  @map("avatar_url")
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
+  googleId     String?  @unique @map("google_id")
+  avatarUrl    String?  @map("avatar_url")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  routines Routine[]
-  sessions WorkoutSession[]
+  routines     Routine[]
+  sessions     WorkoutSession[]
+  subscription Subscription?
+  payments     Payment[]
 
   @@map("users")
 }
@@ -159,4 +161,84 @@ model SetLog {
   @@index([sessionId])
   @@index([exerciseId])
   @@map("set_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2b — subscriptions and payments
+// ---------------------------------------------------------------------------
+
+/// A subscription tier. Seeded from PLANS in src/billing/plans.ts, not editable
+/// from the app.
+model Plan {
+  code       String   @id
+  name       String
+  /// Price in cents of `currency` (Bs 49.00 -> 4900). 0 for the free plan.
+  priceCents Int      @map("price_cents")
+  /// ISO 4217. Bolivianos for the QR/transfer flow; a Merchant of Record such
+  /// as Polar settles in USD, hence per-row and not a global constant.
+  currency   String   @default("BOB")
+  /// Days one paid period lasts. 0 = never expires (the free plan).
+  periodDays Int      @map("period_days")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  @@map("plans")
+}
+
+/// The user's current subscription. No row at all means the free plan, so
+/// existing accounts need no backfill.
+model Subscription {
+  id        String    @id @default(cuid())
+  userId    String    @unique @map("user_id")
+  planCode  String    @map("plan_code")
+  /// active | expired | cancelled
+  status    String
+  /// Provider that paid for the period in force ("manual-qr" | "polar").
+  provider  String
+  startedAt DateTime  @default(now()) @map("started_at")
+  /// null only while the plan never expires.
+  expiresAt DateTime? @map("expires_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planCode], references: [code])
+
+  @@index([status, expiresAt])
+  @@map("subscriptions")
+}
+
+/// One payment attempt. Append-only: rows are transitioned, never deleted.
+model Payment {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  planCode    String    @map("plan_code")
+  /// "manual-qr" | "polar"
+  provider    String
+  /// Short code the payer quotes in the transfer, e.g. "FIT-7QK4M2".
+  reference   String    @unique
+  /// Provider-side id (a Polar order). null for manual-qr. Unique because it
+  /// is what makes webhook delivery idempotent.
+  externalId  String?   @unique @map("external_id")
+  /// pending | paid | failed | expired
+  status      String
+  amountCents Int       @map("amount_cents")
+  currency    String    @default("BOB")
+  /// Provider payload: checkout url, transfer instructions, admin note.
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  /// Unclaimed manual payments go stale so the admin queue stays short.
+  expiresAt   DateTime? @map("expires_at")
+  paidAt      DateTime? @map("paid_at")
+  /// Email of the admin who confirmed a manual payment (audit trail).
+  confirmedBy String?   @map("confirmed_by")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planCode], references: [code])
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("payments")
 }

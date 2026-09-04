@@ -138,3 +138,68 @@ export interface Stats {
   topExercises: { exerciseId: string; name: string; gifUrl: string; volume: number; sets: number }[];
   records: { exerciseId: string; name: string; bestWeight: number; bestReps: number; est1rm: number }[];
 }
+
+// ── Subscriptions ───────────────────────────────────────────────────────────
+
+export type ProviderId = "manual-qr" | "polar";
+export type PaymentStatus = "pending" | "paid" | "failed" | "expired";
+
+export interface Plan {
+  code: string;
+  name: string;
+  priceCents: number;
+  currency: string;
+  /** 0 = never expires (the free plan). */
+  periodDays: number;
+  /** Pre-formatted by the API, e.g. "Bs 49.00". */
+  amountLabel: string;
+}
+
+export interface BillingCatalog {
+  plans: Plan[];
+  providers: { id: ProviderId; enabled: boolean }[];
+}
+
+export interface Payment {
+  reference: string;
+  planCode: string;
+  provider: ProviderId;
+  status: PaymentStatus;
+  amountCents: number;
+  currency: string;
+  amountLabel: string;
+  createdAt: string;
+  expiresAt: string | null;
+  paidAt: string | null;
+}
+
+export interface Subscription {
+  planCode: string;
+  /** active | expired | cancelled | none */
+  status: string;
+  isPro: boolean;
+  startedAt: string | null;
+  expiresAt: string | null;
+  pendingPayment: Payment | null;
+}
+
+/** What to show the payer for a QR Simple / bank transfer. */
+export interface ChargeInstructions {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  qrImageUrl: string | null;
+  reference: string;
+  amountCents: number;
+  currency: string;
+  contact: string;
+}
+
+export type Charge =
+  | { kind: "instructions"; instructions: ChargeInstructions }
+  | { kind: "redirect"; url: string; externalId: string };
+
+export interface CheckoutResult {
+  payment: Payment;
+  charge: Charge;
+}

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "./db.js";
 import { requireAuth, userId } from "./auth.js";
+import { requirePro } from "./billing/subscriptions.js";
 
 interface SetInput {
   exerciseId: string;
@@ -142,8 +143,11 @@ export function registerSessions(app: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  /** Aggregates for the progress dashboard. */
-  app.get("/stats", auth, async (req) => {
+  /**
+   * Aggregates for the progress dashboard — the first Pro-only feature.
+   * Logging workouts stays free; only the analytics on top of the log are gated.
+   */
+  app.get("/stats", { preHandler: [requireAuth, requirePro] }, async (req) => {
     const sessions = await prisma.workoutSession.findMany({
       where: { userId: userId(req), finishedAt: { not: null } },
       orderBy: { startedAt: "desc" },

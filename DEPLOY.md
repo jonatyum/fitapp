@@ -34,6 +34,52 @@ Todo el código de deploy ya está en el repo:
    DIRECT_URL=postgresql://postgres.xxxx:PASSWORD@aws-0-...pooler.supabase.com:5432/postgres
    ```
 
+Si la base es **nueva y está vacía**, ya has terminado: el primer arranque del
+backend aplicará la migración inicial. Si ya tenía tablas, sigue el paso
+siguiente **antes** de desplegar.
+
+---
+
+## 1.b Bases de datos que ya existen (baselining)
+
+> Solo si tu base se creó con `prisma db push` (todo lo desplegado antes de la
+> migración a migraciones versionadas). **Sáltatelo si la base está vacía.**
+
+`db push` no crea la tabla `_prisma_migrations`, así que Prisma no sabe qué se
+ha aplicado. Si arrancas el backend sin más, `prisma migrate deploy` intentará
+ejecutar la migración inicial desde cero y fallará con `relation "users" already
+exists`, dejando la migración marcada como fallida.
+
+La solución es **baselining**: decirle a Prisma que la migración inicial ya está
+aplicada. Solo escribe una fila en `_prisma_migrations`; **no ejecuta el SQL y
+no toca tus datos**.
+
+Hazlo **una vez**, desde tu máquina, antes de desplegar:
+
+```bash
+cd apps/api
+
+# La DIRECT (puerto 5432), no la pooled. Prisma la lee como directUrl.
+export DATABASE_URL='postgresql://postgres.xxxx:PASSWORD@...:5432/postgres'
+export DIRECT_URL="$DATABASE_URL"
+
+# 1. Comprueba el estado. Debe decir que la base no está inicializada.
+npx prisma migrate status
+
+# 2. Marca la migración inicial como ya aplicada (NO ejecuta su SQL).
+npx prisma migrate resolve --applied 20260904005056_init
+
+# 3. Confirma. Debe decir "Database schema is up to date!".
+npx prisma migrate status
+```
+
+Antes del paso 2, **haz un backup**: en Supabase, *Database → Backups*, o
+`pg_dump`. El comando no es destructivo, pero el backup es gratis.
+
+Si `migrate status` del paso 3 detecta diferencias entre tu schema y la base, es
+que la base había derivado respecto a `schema.prisma`. Para en ese punto y
+resuélvelo antes de desplegar; no fuerces el deploy.
+
 ---
 
 ## 2. Backend — Render
@@ -49,8 +95,14 @@ Todo el código de deploy ya está en el repo:
    | `GOOGLE_CLIENT_ID` | tu client id, o vacío para desactivar Google |
    | `CORS_ORIGIN` | `https://<tu-usuario>.github.io` (lo tendrás tras §3) |
    | `JWT_SECRET` | lo genera Render solo — no lo toques |
-4. **Deploy**. En el primer arranque el contenedor: crea las tablas
-   (`prisma db push`), importa los 1.324 ejercicios (seed) y sirve la API.
+4. **Deploy**. En cada arranque el contenedor: aplica las migraciones
+   pendientes (`prisma migrate deploy`), importa los 1.324 ejercicios (seed,
+   idempotente) y sirve la API. Si una migración falla, el contenedor sale con
+   error y Render marca el deploy como fallido en vez de servir con un schema
+   equivocado — mira los logs antes de reintentar.
+
+   > Si tu base ya existía y **no** hiciste el baselining de §1.b, este paso
+   > fallará con `relation already exists`. Vuelve a §1.b.
 5. Copia la URL pública, algo como `https://fitapp-api.onrender.com`.
    Compruébala: `https://fitapp-api.onrender.com/health` → `{"status":"ok"}`.
 
@@ -100,11 +152,132 @@ redirección. Añádete como *usuario de prueba* en la pantalla de consentimient
 
 ---
 
+## 6. Cambiar el schema más adelante
+
+Las migraciones viven en `apps/api/prisma/migrations/` y **se commitean**. El
+flujo es el mismo de siempre menos el `db push`:
+
+```bash
+cd apps/api
+
+# 1. Edita prisma/schema.prisma.
+
+# 2. Genera la migración contra tu Postgres local (docker compose up db).
+#    Crea el .sql, lo aplica en local y regenera el cliente.
+DATABASE_URL='postgresql://fitapp:fitapp@localhost:5433/fitapp' \
+DIRECT_URL='postgresql://fitapp:fitapp@localhost:5433/fitapp' \
+  npm run db:migrate -- --name describe_el_cambio
+
+# 3. Revisa el SQL generado antes de commitear.
+cat prisma/migrations/*_describe_el_cambio/migration.sql
+
+# 4. Commit del schema + la carpeta de la migración, y push.
+#    Render la aplicará sola en el siguiente deploy.
+```
+
+Reglas:
+
+- **Nunca edites una migración ya desplegada.** Prisma guarda un checksum y
+  `migrate deploy` fallará. Para corregir algo, crea otra migración encima.
+- **Revisa el SQL de cualquier migración que borre o renombre.** Prisma genera
+  `DROP COLUMN` / `DROP TABLE` sin avisar cuando quitas algo del schema; en una
+  base con datos reales eso es pérdida definitiva. Si el cambio es un renombrado,
+  reescribe el SQL a mano como `ALTER TABLE ... RENAME COLUMN`.
+- `prisma migrate dev` **resetea la base si detecta drift**. Úsalo solo en local,
+  nunca contra Supabase. En producción solo corre `migrate deploy`, que jamás
+  resetea nada.
+- `migrate dev` necesita una *shadow database* que crea y borra sola; el
+  Postgres local de `docker-compose` ya tiene permisos para eso. Supabase no
+  hace falta que los tenga, porque allí nunca se ejecuta `migrate dev`.
+
+---
+
+## 7. Suscripciones (planes Free / Pro)
+
+El módulo vive en `apps/api/src/billing/` y es **agnóstico del proveedor de
+pago**: todo lo específico está detrás de la interfaz `PaymentProvider`
+(`billing/types.ts`). Hay dos implementaciones registradas en
+`billing/providers.ts`.
+
+### manual-qr — el proveedor activo (comisión 0)
+
+QR Simple / transferencia bancaria, conciliada a mano. El usuario transfiere
+citando una referencia (`FIT-XXXXXX`), manda el comprobante, y tú confirmas.
+Cero comisión y cero coste fijo.
+
+Variables en Render (ver `.env.example`):
+
+| Variable | Para qué |
+|---|---|
+| `QR_ACCOUNT_NUMBER` | **obligatoria** — sin ella el proveedor queda desactivado |
+| `QR_CONTACT` | **obligatoria** — a dónde manda el comprobante (WhatsApp) |
+| `QR_BANK_NAME`, `QR_ACCOUNT_NAME` | se muestran en las instrucciones |
+| `QR_IMAGE_URL` | URL de la imagen del QR (opcional) |
+| `ADMIN_EMAILS` | quién puede confirmar pagos, separados por comas |
+
+Si faltan las dos obligatorias, la pantalla de planes no ofrece ningún medio de
+pago en vez de mandar al usuario a transferir a una cuenta vacía.
+
+**Confirmar un pago** (necesitas el token JWT de una cuenta que esté en
+`ADMIN_EMAILS`):
+
+```bash
+API=https://fitapp-api.onrender.com
+TOKEN=$(curl -s -X POST $API/auth/login -H 'content-type: application/json' \
+  -d '{"email":"tu@correo","password":"..."}' | jq -r .token)
+
+# 1. Ver la cola de pendientes.
+curl -s $API/admin/payments?status=pending -H "authorization: Bearer $TOKEN" | jq
+
+# 2. Confirmar. Activa Pro 30 días; pagar antes de vencer suma al vencimiento.
+curl -s -X POST $API/admin/payments/FIT-XXXXXX/confirm \
+  -H "authorization: Bearer $TOKEN" | jq
+```
+
+Confirmar dos veces devuelve `409 not_pending`: nunca se conceden dos periodos.
+
+### polar — preparado, apagado
+
+[Polar.sh](https://polar.sh) es Merchant of Record (cobra, se ocupa del
+impuesto y liquida en USD), así que sirve para tarjetas desde fuera de Bolivia.
+No cobra nada hasta que cobra, de modo que no rompe el objetivo de coste fijo 0.
+
+`billing/polar.ts` está escrito pero **desactivado**: se enciende solo cuando
+`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET` y `POLAR_PRODUCT_ID_PRO` están las
+tres puestas. Antes de encenderlo:
+
+1. Verifica las dos llamadas HTTP del fichero contra la documentación vigente
+   de Polar — **nunca se han ejecutado contra una cuenta real**.
+2. Registra el webhook en el panel de Polar apuntando a
+   `https://<tu-api>.onrender.com/billing/webhook/polar`.
+
+La verificación de firma (standard-webhooks: HMAC-SHA256 sobre el cuerpo crudo,
+con ventana de 5 minutos contra replays) sí está probada.
+
+### Gating
+
+`requirePro` (`billing/subscriptions.ts`) es un `preHandler` que se encadena
+detrás del `requireAuth` de siempre y responde **402** (no 403: se arregla
+pagando, y la web distingue los dos):
+
+```ts
+app.get("/stats", { preHandler: [requireAuth, requirePro] }, ...)
+```
+
+Ahora mismo solo gatea el panel de progreso. Registrar entrenos, generar rutinas
+y el catálogo siguen siendo gratis.
+
+El vencimiento se evalúa **al leer**, no con un cron: el plan free de Render no
+tiene dónde correr un scheduler, y una columna `status` desactualizada sería una
+forma silenciosa de regalar Pro.
+
+---
+
 ## Resumen de variables de entorno
 
 | Dónde | Variables |
 |---|---|
-| **Render** (backend) | `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `CORS_ORIGIN` |
+| **Render** (backend) | `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `CORS_ORIGIN`, `TRUST_PROXY`, `ADMIN_EMAILS`, `QR_*` |
 | **GitHub Pages** (build) | `VITE_API_URL` (variable), `VITE_BASE` (lo pone el workflow solo) |
 | **Supabase** | ninguna que configurar — solo copias las dos connection strings |
 
