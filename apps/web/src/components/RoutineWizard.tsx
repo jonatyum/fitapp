@@ -10,8 +10,9 @@ import {
   tLevelDesc,
   tSplit,
 } from "../i18n/plan";
-import type { GeneratedRoutine, Goal, Level, Meta, Place, Routine } from "../types";
-import { DayCard } from "./DayCard";
+import type { Alternative, GeneratedRoutine, Goal, Level, Meta, Place, Routine } from "../types";
+import { DayCard, type DayExercise } from "./DayCard";
+import { ExerciseSwap } from "./ExerciseSwap";
 import { Icon, type IconName } from "./ui/Icon";
 
 const DAY_CHOICES = [2, 3, 4, 5, 6];
@@ -69,6 +70,40 @@ export function RoutineWizard({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  /** ejercicio del preview que se está cambiando; el plan aún no existe en el servidor */
+  const [swapping, setSwapping] = useState<{
+    dayIndex: number;
+    position: number;
+    current: DayExercise;
+  } | null>(null);
+
+  // El plan todavía no está guardado, así que el cambio es puramente local:
+  // se aplica sobre el borrador y se persiste cuando el usuario guarda.
+  const applySwap = (alt: Alternative) => {
+    if (!swapping) return;
+    const { dayIndex, position } = swapping;
+    // `fitsKit` describe la alternativa frente al kit, no al ejercicio: no
+    // tiene sentido guardarlo dentro del plan.
+    const { fitsKit: _fitsKit, ...picked } = alt;
+    setPlan((prev) =>
+      prev
+        ? {
+            ...prev,
+            days: prev.days.map((d, i) =>
+              i !== dayIndex
+                ? d
+                : {
+                    ...d,
+                    exercises: d.exercises.map((e, j) =>
+                      j !== position ? e : { ...e, exercise: { ...e.exercise, ...picked } },
+                    ),
+                  },
+            ),
+          }
+        : prev,
+    );
+    setSwapping(null);
+  };
 
   // Only offer equipment the dataset actually has.
   const choices = EQUIPMENT_CHOICES.filter((e) => meta?.equipment.includes(e) ?? true);
@@ -305,10 +340,29 @@ export function RoutineWizard({
 
           <div className="daylist">
             {plan.days.map((d, i) => (
-              <DayCard key={i} day={d} index={i} />
+              <DayCard
+                key={i}
+                day={d}
+                index={i}
+                onSwap={(e, position) => setSwapping({ dayIndex: i, position, current: e })}
+              />
             ))}
           </div>
         </>
+      )}
+
+      {swapping && plan && (
+        <ExerciseSwap
+          current={swapping.current.exercise}
+          slot={swapping.current.slot}
+          level={plan.level}
+          equipment={plan.equipment}
+          place={plan.place}
+          // Todo el día, para no ofrecer algo que ya está prescrito ahí.
+          exclude={plan.days[swapping.dayIndex].exercises.map((e) => e.exercise.id)}
+          onPick={applySwap}
+          onClose={() => setSwapping(null)}
+        />
       )}
     </div>
   );

@@ -104,6 +104,22 @@ export interface Routine {
 /** Where a plan is meant to be trained; drives the generator's equipment pool. */
 export type Place = "gym" | "home";
 
+/**
+ * A candidate to take over a slot. Carries only what the swap list renders,
+ * plus whether it can be done with the kit the plan was built for.
+ */
+export interface Alternative {
+  id: string;
+  name: string;
+  target: string;
+  equipment: string;
+  bodyPart: string;
+  secondaryMuscles: string[];
+  gifUrl: string;
+  image: string;
+  fitsKit: boolean;
+}
+
 export interface RoutineSummary extends Omit<Routine, "days"> {
   _count: { days: number; sessions: number };
 }

@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  ApiError,
   apiDeleteRoutine,
   apiRoutine,
   apiRoutines,
+  apiSwapRoutineExercise,
   apiUpdateRoutine,
 } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 import { tGoal, tLevel, tSplit } from "../i18n/plan";
-import type { Exercise, Routine, RoutineSummary } from "../types";
+import type { Alternative, Exercise, Routine, RoutineSummary } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { DayCard } from "./DayCard";
+import { DayCard, type DayExercise } from "./DayCard";
+import { ExerciseSwap } from "./ExerciseSwap";
 import { RoutineWizard } from "./RoutineWizard";
 import { Icon } from "./ui/Icon";
 import type { Meta } from "../types";
@@ -31,6 +34,32 @@ export function RoutineView({
   const [loading, setLoading] = useState(true);
   /** routine queued for deletion, pending confirmation */
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  /** fila del plan que se está cambiando por una alternativa */
+  const [swapping, setSwapping] = useState<{
+    dayId: string;
+    rowId: string;
+    current: DayExercise;
+  } | null>(null);
+  const [swapBusy, setSwapBusy] = useState<string | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
+
+  // Aquí el plan ya existe en el servidor, así que el cambio se persiste y la
+  // respuesta trae la rutina entera: no hace falta recomponerla en el cliente.
+  const applySwap = async (alt: Alternative) => {
+    if (!swapping || !current) return;
+    setSwapBusy(swapping.current.exercise.id);
+    setSwapError(null);
+    try {
+      setCurrent(await apiSwapRoutineExercise(current.id, swapping.rowId, alt.id));
+      setSwapping(null);
+    } catch (e) {
+      setSwapError(
+        e instanceof ApiError && e.code === "already_in_day" ? t("swapDuplicate") : t("swapFailed"),
+      );
+    } finally {
+      setSwapBusy(null);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,6 +146,11 @@ export function RoutineView({
             index={i}
             onStart={() => onStartWorkout(current, i)}
             onOpenExercise={onOpenExercise}
+            onSwap={(e, position) => {
+              setSwapError(null);
+              setSwapping({ dayId: d.id, rowId: d.exercises[position].id, current: e });
+            }}
+            swappingId={swapBusy}
           />
         ))}
       </div>
@@ -155,6 +189,26 @@ export function RoutineView({
           message={t("deleteConfirm")}
           onConfirm={() => remove(pendingDelete)}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {swapping && current && (
+        <ExerciseSwap
+          current={swapping.current.exercise}
+          slot={swapping.current.slot}
+          level={current.level}
+          equipment={current.equipment}
+          exclude={
+            current.days.find((d) => d.id === swapping.dayId)?.exercises.map((e) => e.exerciseId) ??
+            []
+          }
+          busy={swapBusy !== null}
+          error={swapError}
+          onPick={applySwap}
+          onClose={() => {
+            setSwapping(null);
+            setSwapError(null);
+          }}
         />
       )}
     </div>

@@ -2,6 +2,7 @@ import { mediaUrl } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 import { tDayLabel } from "../i18n/plan";
 import { translateName } from "../i18n/translateName";
+import { Icon } from "./ui/Icon";
 import type { Exercise, Prescription } from "../types";
 
 export interface DayExercise extends Prescription {
@@ -24,11 +25,17 @@ export function DayCard({
   index,
   onStart,
   onOpenExercise,
+  onSwap,
+  swappingId,
 }: {
   day: DayLike;
   index: number;
   onStart?: () => void;
   onOpenExercise?: (ex: Exercise) => void;
+  /** cuando se pasa, cada ejercicio ofrece cambiarse por una alternativa */
+  onSwap?: (e: DayExercise, position: number) => void;
+  /** id del ejercicio que se está cambiando ahora mismo */
+  swappingId?: string | null;
 }) {
   const { t, tv, lang } = useI18n();
 
@@ -55,7 +62,7 @@ export function DayCard({
 
       <ol className="exlist">
         {day.exercises.map((e, i) => (
-          <li key={`${e.exercise.id}-${i}`}>
+          <li key={`${e.exercise.id}-${i}`} className={onSwap ? "exline" : undefined}>
             <button
               className="exrow"
               onClick={() => onOpenExercise?.(e.exercise)}
@@ -75,6 +82,17 @@ export function DayCard({
                 <small>{t("restN", { n: e.restSec })}</small>
               </span>
             </button>
+            {onSwap && (
+              <button
+                className={`btn icon ghost exswap${swappingId === e.exercise.id ? " loading" : ""}`}
+                onClick={() => onSwap(e, i)}
+                disabled={swappingId === e.exercise.id}
+                aria-label={t("swapAria", { name: translateName(e.exercise.name, lang) })}
+                title={t("swapAction")}
+              >
+                <Icon name="swap" size={18} />
+              </button>
+            )}
           </li>
         ))}
       </ol>

@@ -1,4 +1,5 @@
 import type {
+  Alternative,
   BillingCatalog,
   CheckoutResult,
   Exercise,
@@ -172,6 +173,34 @@ export const apiUpdateRoutine = (id: string, patch: { name?: string; active?: bo
 
 export const apiDeleteRoutine = (id: string) =>
   request<void>(`/routines/${id}`, { method: "DELETE" });
+
+/**
+ * Swap candidates for one slot. Stateless, so the generator preview (no
+ * routine id yet) and a saved routine both use it.
+ */
+export const apiAlternatives = (input: {
+  slot: string;
+  level: Level;
+  equipment: string[];
+  place?: Place;
+  exclude?: string[];
+  limit?: number;
+}) =>
+  request<{ items: Alternative[] }>("/routines/alternatives", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }).then((r) => r.items);
+
+/** Replace one exercise of a saved routine, keeping its slot and prescription. */
+export const apiSwapRoutineExercise = (
+  routineId: string,
+  routineExerciseId: string,
+  exerciseId: string,
+) =>
+  request<Routine>(`/routines/${routineId}/exercises/${routineExerciseId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ exerciseId }),
+  });
 
 // Workout sessions
 

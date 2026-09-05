@@ -323,6 +323,114 @@ export interface GeneratedRoutine {
   days: GeneratedDay[];
 }
 
+export interface AlternativesInput {
+  /** muscle slot the exercise occupies in the plan, e.g. "chest" */
+  slot: string;
+  level: Level;
+  /** the plan's kit; empty means everything is available */
+  equipment: string[];
+  place?: Place;
+  /** exercise ids already in the same day, so we never offer a duplicate */
+  exclude?: string[];
+  limit?: number;
+}
+
+/** An alternative, plus whether it fits the kit the plan was built with. */
+export interface Alternative extends PoolExercise {
+  fitsKit: boolean;
+}
+
+/**
+ * Exercises that can take over a slot, best first.
+ *
+ * Same scoring the generator uses to fill the slot in the first place, so the
+ * order the user sees matches the reasoning behind the plan. It differs from
+ * generation in one deliberate way: generation treats the home kit as a hard
+ * boundary, but a manual swap is an explicit choice, so out-of-kit options are
+ * still offered — ranked below the ones that fit and flagged with `fitsKit`.
+ * Hiding them would strand someone whose only barbell is taken.
+ */
+export async function alternativesFor(input: AlternativesInput): Promise<Alternative[]> {
+  const pool = await loadPool();
+  const place: Place = input.place === "home" ? "home" : "gym";
+  const keys = SLOT_KEYS[input.slot] ?? [input.slot];
+  const compound = COMPOUND.has(input.slot);
+  const excluded = new Set(input.exclude ?? []);
+  const kit = input.equipment.length ? new Set(input.equipment) : null;
+
+  const ranked = pool
+    .filter(
+      (ex) =>
+        !excluded.has(ex.id) &&
+        (keys.includes(ex.target) || ex.secondaryMuscles.some((m) => keys.includes(m))),
+    )
+    .map((ex) => ({
+      ex,
+      fitsKit: kit ? kit.has(ex.equipment) : true,
+      // Whether the slot is what the exercise actually trains, rather than a
+      // muscle it happens to list as secondary. Generation never had to care:
+      // it only ever looks at its top four candidates, where a primary match
+      // always wins. A swap menu of 24 reaches far enough down to start
+      // offering an elliptical as a substitute for a squat.
+      primary: keys.includes(ex.target),
+      score: scoreExercise(ex, keys, compound, input.level, place),
+    }))
+    .filter((c) => c.score > -Infinity)
+    // Two tiers before score: an exercise the user cannot perform today is
+    // never the better suggestion, and neither is one that does not train the
+    // muscle the slot exists for.
+    .sort(
+      (a, b) =>
+        Number(b.fitsKit) - Number(a.fitsKit) ||
+        Number(b.primary) - Number(a.primary) ||
+        b.score - a.score,
+    );
+
+  const limit = Math.min(60, Math.max(1, input.limit ?? 24));
+
+  // Straight score order returns eight variations of the barbell bench press,
+  // which is useless as a swap menu: someone changing an exercise wants a
+  // different movement, not a different grip on the same one. So the list is
+  // dealt round-robin across equipment, best of each first — bench, dumbbell
+  // press, machine press, cable fly, push-up — and only then second choices.
+  // Buckets are grouped by tier first and dealt tier by tier, so variety never
+  // promotes a worse tier: the list fills up with equipment variety among the
+  // exercises that fit and actually train the slot before it offers anything
+  // else at all.
+  const tiers = new Map<string, Map<string, typeof ranked>>();
+  for (const c of ranked) {
+    const tier = `${c.fitsKit ? "1" : "0"}${c.primary ? "1" : "0"}`;
+    const byEquipment = tiers.get(tier) ?? new Map<string, typeof ranked>();
+    if (!tiers.has(tier)) tiers.set(tier, byEquipment);
+    const bucket = byEquipment.get(c.ex.equipment);
+    if (bucket) bucket.push(c);
+    else byEquipment.set(c.ex.equipment, [c]);
+  }
+
+  const out: typeof ranked = [];
+  for (const byEquipment of tiers.values()) {
+    if (out.length >= limit) break;
+    const buckets = [...byEquipment.values()];
+    for (let round = 0; out.length < limit; round++) {
+      let dealt = false;
+      for (const b of buckets) {
+        if (round < b.length) {
+          out.push(b[round]);
+          dealt = true;
+          if (out.length === limit) break;
+        }
+      }
+      if (!dealt) break;
+    }
+  }
+
+  // Se devuelve en el orden en que se repartió, no por score: reordenar por
+  // calidad vuelve a amontonar seis variantes de barra antes de la primera
+  // mancuerna, que es justo lo que el reparto evita. Cada vuelta ya sale de
+  // mejor a peor, así que la primera pantalla es "la mejor de cada equipo".
+  return out.map(({ ex, fitsKit }) => ({ ...ex, fitsKit }));
+}
+
 export async function generateRoutine(input: GenerateInput): Promise<GeneratedRoutine> {
   const daysPerWeek = Math.min(6, Math.max(2, Math.round(input.daysPerWeek)));
   const split = SPLITS[daysPerWeek];
