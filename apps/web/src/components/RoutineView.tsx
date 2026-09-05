@@ -11,6 +11,7 @@ import type { Exercise, Routine, RoutineSummary } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DayCard } from "./DayCard";
 import { RoutineWizard } from "./RoutineWizard";
+import { Icon } from "./ui/Icon";
 import type { Meta } from "../types";
 
 export function RoutineView({
@@ -72,15 +73,15 @@ export function RoutineView({
     );
   }
 
-  if (loading) return <div className="status">{t("loading")}</div>;
+  if (loading) return <p className="status" role="status">{t("loading")}</p>;
 
   if (!current) {
     return (
-      <div className="empty">
-        <div className="empty-icon">🗓️</div>
+      <div className="empty first-use">
+        <Icon name="calendar" size={48} className="empty-icon" />
         <h2>{t("noRoutineTitle")}</h2>
         <p>{t("noRoutineText")}</p>
-        <button className="btn primary" onClick={() => setWizard(true)}>
+        <button className="btn primary lg" onClick={() => setWizard(true)}>
           {t("newRoutine")}
         </button>
       </div>
@@ -94,8 +95,8 @@ export function RoutineView({
       <header className="routine-head">
         <div>
           <div className="routine-title">
-            <h2>{current.name}</h2>
-            {current.active && <span className="badge accent">{t("activeBadge")}</span>}
+            <h1>{current.name}</h1>
+            {current.active && <span className="badge brand">{t("activeBadge")}</span>}
           </div>
           <p className="hint">
             {tSplit(current.split, lang)} · {t("perWeek", { n: current.daysPerWeek })} ·{" "}
@@ -103,7 +104,8 @@ export function RoutineView({
           </p>
         </div>
         <button className="btn primary" onClick={() => setWizard(true)}>
-          + {t("newRoutine")}
+          <Icon name="plus" size={18} />
+          {t("newRoutine")}
         </button>
       </header>
 
@@ -121,7 +123,7 @@ export function RoutineView({
 
       {others.length > 0 && (
         <>
-          <div className="section-label">{t("otherRoutines")}</div>
+          <h2 className="section-label">{t("otherRoutines")}</h2>
           <ul className="routine-list">
             {others.map((r) => (
               <li key={r.id}>
@@ -135,12 +137,12 @@ export function RoutineView({
                   <span className="linkish">{t("makeActive")}</span>
                 </button>
                 <button
-                  className="icon-btn danger"
+                  className="btn icon ghost"
                   onClick={() => setPendingDelete(r.id)}
-                  aria-label={t("delete")}
+                  aria-label={`${t("delete")}: ${r.name}`}
                   title={t("delete")}
                 >
-                  🗑
+                  <Icon name="trash" size={18} />
                 </button>
               </li>
             ))}

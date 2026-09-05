@@ -1,11 +1,12 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { fetchExercises, fetchMeta, fetchMuscleCounts } from "./api";
 import type { UIKey } from "./i18n/ui";
 import type { Exercise, Meta, Routine } from "./types";
 import { useI18n } from "./i18n/I18nContext";
-import { useTheme } from "./useTheme";
+import { useTheme } from "./theme";
 import { useAuth } from "./auth/AuthContext";
 import { LanguageMenu } from "./components/LanguageMenu";
+import { AccountMenu } from "./components/AccountMenu";
 import { ExerciseCard, SkeletonCard } from "./components/ExerciseCard";
 import { ExerciseDetail } from "./components/ExerciseDetail";
 import { FilterBar, type FilterState } from "./components/FilterBar";
@@ -15,69 +16,30 @@ import { RoutineView } from "./components/RoutineView";
 import { WorkoutLogger } from "./components/WorkoutLogger";
 import { ProgressView } from "./components/ProgressView";
 import { PlansView } from "./components/PlansView";
+import { Icon, type IconName } from "./components/ui/Icon";
+import { Logo } from "./components/ui/Logo";
 
 type View = "catalog" | "map" | "routine" | "progress" | "billing";
 
-const NAV_LABEL: Record<View, UIKey> = {
-  catalog: "navCatalog",
-  map: "navMap",
-  routine: "navRoutine",
-  progress: "navProgress",
-  billing: "navPlans",
-};
-
-const NAV_ICONS: Record<View, ReactNode> = {
-  catalog: (
-    <>
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </>
-  ),
-  map: (
-    <>
-      <circle cx="12" cy="4.5" r="2.2" />
-      <path
-        d="M12 7v7M12 8.5 7 11M12 8.5 17 11M9.5 21l2.5-7 2.5 7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </>
-  ),
-  routine: (
-    <>
-      <rect x="3" y="5" width="18" height="16" rx="2.5" />
-      <path d="M8 3v4M16 3v4M3 10h18M8 15h3" strokeLinecap="round" />
-    </>
-  ),
-  progress: (
-    <path
-      d="M4 19V9M10 19V5M16 19v-7M22 19H2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-  billing: (
-    <path
-      d="m12 3 2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.4 6.7 19.2l1.1-5.9L3.5 9.2l5.9-.8z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-};
+const NAV: { view: View; label: UIKey; icon: IconName }[] = [
+  { view: "catalog", label: "navCatalog", icon: "grid" },
+  { view: "map", label: "navMap", icon: "body" },
+  { view: "routine", label: "navRoutine", icon: "calendar" },
+  { view: "progress", label: "navProgress", icon: "chart" },
+  { view: "billing", label: "navPlans", icon: "credit-card" },
+];
 
 export function App() {
   const { t } = useI18n();
   const { theme, toggle } = useTheme();
-  const { user, ready, logout } = useAuth();
+  const { user, ready } = useAuth();
 
   const [meta, setMeta] = useState<Meta | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [items, setItems] = useState<Exercise[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<Exercise | null>(null);
   const [view, setView] = useState<View>("catalog");
   const [authOpen, setAuthOpen] = useState(false);
@@ -96,7 +58,7 @@ export function App() {
     setFilters((f) => ({ ...f, ...patch }));
 
   useEffect(() => {
-    fetchMeta().then(setMeta).catch((e) => setError(String(e)));
+    fetchMeta().then(setMeta).catch(() => setFailed(true));
     fetchMuscleCounts().then(setCounts).catch(() => {});
   }, []);
 
@@ -108,9 +70,9 @@ export function App() {
         .then((res) => {
           setItems(res.items);
           setTotal(res.total);
-          setError(null);
+          setFailed(false);
         })
-        .catch((e) => setError(String(e)))
+        .catch(() => setFailed(true))
         .finally(() => setLoading(false));
     }, 220);
     return () => clearTimeout(timer);
@@ -140,41 +102,32 @@ export function App() {
   };
 
   const signInPrompt = (
-    <div className="empty">
-      <div className="empty-icon">🔐</div>
+    <div className="empty first-use">
+      <Icon name="lock" size={48} className="empty-icon" />
       <h2>{t("signIn")}</h2>
       <p>{t("authRequired")}</p>
-      <button className="btn primary" onClick={() => setAuthOpen(true)}>
+      <button className="btn primary lg" onClick={() => setAuthOpen(true)}>
         {t("signIn")}
       </button>
     </div>
   );
 
+  const navItems = NAV.map((n) => ({ ...n, current: view === n.view && !workout }));
+
   return (
     <>
+      <a className="skip-link" href="#main">
+        {t("skipToContent")}
+      </a>
+
       <header className="topbar">
-        <div className="brand">
-          <svg
-            className="brand-logo"
-            viewBox="0 0 32 32"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <rect x="10" y="14" width="12" height="4" rx="2" />
-            <rect x="5" y="9" width="4" height="14" rx="2" />
-            <rect x="2" y="12" width="3" height="8" rx="1.5" />
-            <rect x="23" y="9" width="4" height="14" rx="2" />
-            <rect x="27" y="12" width="3" height="8" rx="1.5" />
-          </svg>
-          <span className="tag-name">FitApp</span>
-        </div>
+        <Logo />
 
         <div className="searchbox">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" strokeLinecap="round" />
-          </svg>
+          <Icon name="search" size={18} />
           <input
+            type="search"
+            aria-label={t("searchPlaceholder")}
             placeholder={t("searchPlaceholder")}
             value={q}
             onChange={(e) => {
@@ -185,43 +138,38 @@ export function App() {
         </div>
 
         <div className="topbar-actions">
-          <nav className="viewtoggle" role="tablist">
-            {(Object.keys(NAV_ICONS) as View[]).map((v) => (
+          {/* Navegación de aplicación: <nav> + aria-current, no un tablist
+              (un tablist obliga al patrón de flechas de APG). */}
+          <nav className="navtabs" aria-label={t("mainNav")}>
+            {navItems.map((n) => (
               <button
-                key={v}
-                role="tab"
-                aria-selected={view === v}
-                className={view === v && !workout ? "active" : ""}
-                onClick={() => go(v)}
-                aria-label={t(NAV_LABEL[v])}
-                title={t(NAV_LABEL[v])}
+                key={n.view}
+                className="tab"
+                aria-current={n.current ? "page" : undefined}
+                onClick={() => go(n.view)}
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {NAV_ICONS[v]}
-                </svg>
+                <Icon name={n.icon} size={18} />
+                {t(n.label)}
               </button>
             ))}
           </nav>
+
           <LanguageMenu />
-          <button className="icon-btn" onClick={toggle} aria-label={t("theme")} title={t("theme")}>
-            {theme === "dark" ? "☀️" : "🌙"}
+
+          <button
+            className="btn icon ghost"
+            onClick={toggle}
+            aria-label={t(theme === "dark" ? "themeToLight" : "themeToDark")}
+            title={t(theme === "dark" ? "themeToLight" : "themeToDark")}
+          >
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={20} />
           </button>
+
           {ready &&
             (user ? (
-              <button
-                className="icon-btn avatar"
-                onClick={logout}
-                title={`${user.name} — ${t("signOut")}`}
-                aria-label={t("signOut")}
-              >
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" />
-                ) : (
-                  user.name.slice(0, 1).toUpperCase()
-                )}
-              </button>
+              <AccountMenu />
             ) : (
-              <button className="btn ghost small" onClick={() => setAuthOpen(true)}>
+              <button className="btn secondary sm" onClick={() => setAuthOpen(true)}>
                 {t("signIn")}
               </button>
             ))}
@@ -229,77 +177,96 @@ export function App() {
       </header>
 
       {view === "catalog" && !workout && (
-        <>
-          <FilterBar
-            meta={meta}
-            filters={filters}
-            set={setFilter}
-            total={total}
-            loading={loading}
-          />
-          <main className="content">
-            <div className="grid">
-              {error && <div className="status">Error: {error}</div>}
+        <FilterBar
+          meta={meta}
+          filters={filters}
+          set={setFilter}
+          total={total}
+          loading={loading}
+        />
+      )}
+
+      <main id="main" className="app-main">
+        {view === "catalog" && !workout && (
+          <div className="container wide">
+            <h1 className="sr-only">{t("catalogList")}</h1>
+            <div className="grid" aria-busy={loading}>
+              {failed && <div className="status error">{t("loadError")}</div>}
               {loading &&
                 items.length === 0 &&
                 Array.from({ length: 15 }).map((_, i) => <SkeletonCard key={i} />)}
-              {!loading && !error && items.length === 0 && (
+              {!loading && !failed && items.length === 0 && (
                 <div className="status">{t("noResults")}</div>
               )}
               {items.map((ex) => (
                 <ExerciseCard key={ex.id} ex={ex} onOpen={setSelected} />
               ))}
             </div>
-          </main>
-        </>
-      )}
+          </div>
+        )}
 
-      {view === "map" && !workout && (
-        <main className="content">
-          <MuscleMap activeMuscle={filters.muscle} counts={counts} onSelect={selectMuscle} />
-        </main>
-      )}
+        {view === "map" && !workout && (
+          <div className="container">
+            <h1 className="sr-only">{t("navMap")}</h1>
+            <MuscleMap activeMuscle={filters.muscle} counts={counts} onSelect={selectMuscle} />
+          </div>
+        )}
 
-      {view === "routine" && !workout && (
-        <main className="content narrow">
-          {user ? (
-            <RoutineView
-              meta={meta}
+        {view === "routine" && !workout && (
+          <div className="container narrow">
+            {user ? (
+              <RoutineView
+                meta={meta}
+                onOpenExercise={setSelected}
+                onStartWorkout={(routine, dayIndex) => setWorkout({ routine, dayIndex })}
+              />
+            ) : (
+              signInPrompt
+            )}
+          </div>
+        )}
+
+        {view === "progress" && !workout && (
+          <div className="container narrow">
+            {user ? <ProgressView onSeePlans={() => setView("billing")} /> : signInPrompt}
+          </div>
+        )}
+
+        {view === "billing" && !workout && (
+          <div className="container narrow">
+            <PlansView onSignIn={() => setAuthOpen(true)} />
+          </div>
+        )}
+
+        {workout && (
+          <div className="container narrow">
+            <WorkoutLogger
+              routine={workout.routine}
+              dayIndex={workout.dayIndex}
               onOpenExercise={setSelected}
-              onStartWorkout={(routine, dayIndex) => setWorkout({ routine, dayIndex })}
+              onCancel={() => setWorkout(null)}
+              onDone={() => {
+                setWorkout(null);
+                setView("progress");
+              }}
             />
-          ) : (
-            signInPrompt
-          )}
-        </main>
-      )}
+          </div>
+        )}
+      </main>
 
-      {view === "progress" && !workout && (
-        <main className="content narrow">
-          {user ? <ProgressView onSeePlans={() => setView("billing")} /> : signInPrompt}
-        </main>
-      )}
-
-      {view === "billing" && !workout && (
-        <main className="content narrow">
-          <PlansView onSignIn={() => setAuthOpen(true)} />
-        </main>
-      )}
-
-      {workout && (
-        <main className="content narrow">
-          <WorkoutLogger
-            routine={workout.routine}
-            dayIndex={workout.dayIndex}
-            onOpenExercise={setSelected}
-            onCancel={() => setWorkout(null)}
-            onDone={() => {
-              setWorkout(null);
-              setView("progress");
-            }}
-          />
-        </main>
-      )}
+      <nav className="tabbar" aria-label={t("mainNav")}>
+        {navItems.map((n) => (
+          <button
+            key={n.view}
+            className="tabbar-item"
+            aria-current={n.current ? "page" : undefined}
+            onClick={() => go(n.view)}
+          >
+            <Icon name={n.icon} size={24} className="tabbar-icon" />
+            <span className="tabbar-label">{t(n.label)}</span>
+          </button>
+        ))}
+      </nav>
 
       {selected && <ExerciseDetail ex={selected} onClose={() => setSelected(null)} />}
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}

@@ -23,10 +23,13 @@ const I18nContext = createContext<I18nValue | null>(null);
 
 function initialLang(): Lang {
   const stored = localStorage.getItem("fitapp:lang");
-  if (stored && isLang(stored)) return stored;
   const nav = navigator.language.slice(0, 2);
-  if (isLang(nav)) return nav;
-  return DEFAULT_LANG;
+  const lang: Lang =
+    stored && isLang(stored) ? stored : isLang(nav) ? nav : DEFAULT_LANG;
+  // Se aplica ya, no en el efecto: index.html sirve lang="es" y sin esto un
+  // usuario en inglés tiene el documento mal etiquetado hasta el primer commit.
+  document.documentElement.lang = lang;
+  return lang;
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {

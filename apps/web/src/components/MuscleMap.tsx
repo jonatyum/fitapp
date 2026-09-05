@@ -5,12 +5,6 @@ import Model, {
   type Muscle,
 } from "react-body-highlighter";
 import { useI18n } from "../i18n/I18nContext";
-import type { Lang } from "../i18n/languages";
-
-const MAP_LABELS: Record<Lang, { front: string; back: string; hint: string }> = {
-  en: { front: "Front", back: "Back", hint: "Hover a muscle" },
-  es: { front: "Frente", back: "Espalda", hint: "Pasa por un músculo" },
-};
 
 /**
  * The library draws more detail than the dataset has (e.g. separate soleus, or
@@ -48,9 +42,17 @@ const MUSCLE_GROUP = new Map<Muscle, Group>(
   GROUPS.flatMap((g) => g.muscles.map((m) => [m, g] as [Muscle, Group])),
 );
 
-const BASE = "#59616c"; // muscle we have exercises for
-const DIM = "#3d434c"; // muscle with no exercises in the dataset
-const HIGHLIGHT = "#e42a15";
+/**
+ * Los polígonos se pintan con la custom property, no con un color resuelto en
+ * JS: el navegador la re-resuelve sola cuando cambia `data-theme`, así que el
+ * mapa sigue al tema sin releer estilos ni depender del orden de los efectos.
+ *
+ * No afecta a la identificación de polígonos, que ocurre antes del primer
+ * repintado comparando el `probeColor` que la librería dejó en `style.fill`.
+ */
+const FILL_ACTIVE = "var(--brand)"; // seleccionado o bajo el cursor
+const FILL_AVAILABLE = "var(--muscle)"; // músculo con ejercicios
+const FILL_EMPTY = "var(--joint)"; // sin ejercicios en el dataset
 
 // Each muscle gets a visually identical but numerically unique colour so we can
 // read it back from the DOM and know which polygon is which muscle.
@@ -66,8 +68,7 @@ export function MuscleMap({
   counts: Record<string, number>;
   onSelect: (keys: string[], label: string) => void;
 }) {
-  const { t, tv, lang } = useI18n();
-  const L = MAP_LABELS[lang];
+  const { t, tv } = useI18n();
   const [hovered, setHovered] = useState<string | null>(null);
   const figuresRef = useRef<HTMLDivElement>(null);
   const polyGroup = useRef<Map<Element, Group>>(new Map());
@@ -115,7 +116,7 @@ export function MuscleMap({
       }
       const available = groupCount(g) > 0;
       const on = g.id === hovered || g.id === activeGroup;
-      el.style.fill = on ? HIGHLIGHT : available ? BASE : DIM;
+      el.style.fill = on ? FILL_ACTIVE : available ? FILL_AVAILABLE : FILL_EMPTY;
       el.style.cursor = available ? "pointer" : "default";
     });
   }, [hovered, activeGroup, counts, colorIndex]);
@@ -137,7 +138,7 @@ export function MuscleMap({
   const modelProps = {
     data,
     highlightedColors,
-    bodyColor: DIM,
+    bodyColor: FILL_EMPTY,
     onClick: handleClick,
     svgStyle: { width: "100%", height: "auto" },
   };
@@ -153,7 +154,7 @@ export function MuscleMap({
             </span>
           </>
         ) : (
-          <span className="muscle-count">{L.hint}</span>
+          <span className="muscle-count">{t("mapHint")}</span>
         )}
       </div>
 
@@ -165,11 +166,11 @@ export function MuscleMap({
       >
         <div className="body-figure">
           <Model {...modelProps} type="anterior" />
-          <span className="body-caption">{L.front}</span>
+          <span className="body-caption">{t("mapFront")}</span>
         </div>
         <div className="body-figure">
           <Model {...modelProps} type="posterior" />
-          <span className="body-caption">{L.back}</span>
+          <span className="body-caption">{t("mapBack")}</span>
         </div>
       </div>
     </div>
