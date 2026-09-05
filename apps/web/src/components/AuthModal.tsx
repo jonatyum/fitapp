@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { ApiError } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import type { UIKey } from "../i18n/ui";
 import { GoogleButton } from "./GoogleButton";
+import { Dialog } from "./ui/Dialog";
+import { Icon } from "./ui/Icon";
 
 /** API error codes mapped to the translated message shown under the form. */
 const ERROR_KEY: Record<string, UIKey> = {
@@ -20,6 +22,7 @@ const ERROR_KEY: Record<string, UIKey> = {
 export function AuthModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const { login, register, loginWithGoogle, googleClientId } = useAuth();
+  const id = useId();
 
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
@@ -27,16 +30,6 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [error, setError] = useState<UIKey | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
 
   // Stable identities: GoogleButton re-renders its button when these change.
   const onCredential = useCallback(
@@ -74,87 +67,112 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const invalid = error ? true : undefined;
+
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
-        <form className="auth-form" onSubmit={submit}>
-          <button type="button" className="modal-close" onClick={onClose} aria-label={t("close")}>
-            ✕
-          </button>
+    <Dialog title={mode === "in" ? t("welcomeBack") : t("createAccount")} onClose={onClose}>
+      <form className="auth-form" onSubmit={submit}>
+        <p className="auth-lead">{t("authRequired")}</p>
 
-          <h2>{mode === "in" ? t("welcomeBack") : t("createAccount")}</h2>
-          <p className="auth-lead">{t("authRequired")}</p>
+        {googleClientId && (
+          <>
+            <GoogleButton
+              clientId={googleClientId}
+              mode={mode}
+              onCredential={onCredential}
+              onError={onGoogleError}
+            />
+            <div className="or-divider">
+              <span>{t("orDivider")}</span>
+            </div>
+          </>
+        )}
 
-          {googleClientId && (
-            <>
-              <GoogleButton
-                clientId={googleClientId}
-                mode={mode}
-                onCredential={onCredential}
-                onError={onGoogleError}
-              />
-              <div className="or-divider">
-                <span>{t("orDivider")}</span>
-              </div>
-            </>
-          )}
-
-          {mode === "up" && (
-            <label className="field">
-              <span>{t("nameLabel")}</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-                required
-              />
+        {mode === "up" && (
+          <div className="field">
+            <label className="field-label" htmlFor={`${id}-name`}>
+              {t("nameLabel")}
             </label>
+            <input
+              id={`${id}-name`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+              aria-invalid={invalid}
+              aria-describedby={error ? `${id}-err` : undefined}
+              required
+            />
+          </div>
+        )}
+
+        <div className="field">
+          <label className="field-label" htmlFor={`${id}-email`}>
+            {t("emailLabel")}
+          </label>
+          <input
+            id={`${id}-email`}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            aria-invalid={invalid}
+            aria-describedby={error ? `${id}-err` : undefined}
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label className="field-label" htmlFor={`${id}-password`}>
+            {t("passwordLabel")}
+          </label>
+          <input
+            id={`${id}-password`}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === "in" ? "current-password" : "new-password"}
+            aria-invalid={invalid}
+            aria-describedby={
+              [mode === "up" ? `${id}-hint` : null, error ? `${id}-err` : null]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+            required
+          />
+          {mode === "up" && (
+            <p className="field-help" id={`${id}-hint`}>
+              {t("passwordHint")}
+            </p>
           )}
+        </div>
 
-          <label className="field">
-            <span>{t("emailLabel")}</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </label>
-
-          <label className="field">
-            <span>{t("passwordLabel")}</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === "in" ? "current-password" : "new-password"}
-              required
-            />
-            {mode === "up" && <small>{t("passwordHint")}</small>}
-          </label>
-
-          {error && <div className="form-error">{t(error)}</div>}
-
-          <button className="btn primary block" disabled={busy}>
-            {busy ? t("loading") : mode === "in" ? t("signIn") : t("signUp")}
-          </button>
-
-          <p className="auth-switch">
-            {mode === "in" ? t("noAccount") : t("haveAccount")}{" "}
-            <button
-              type="button"
-              className="linkish"
-              onClick={() => {
-                setMode(mode === "in" ? "up" : "in");
-                setError(null);
-              }}
-            >
-              {mode === "in" ? t("signUp") : t("signIn")}
-            </button>
+        {/* Nunca solo color: el error lleva icono y se anuncia. */}
+        {error && (
+          <p className="form-error" id={`${id}-err`} role="alert">
+            <Icon name="alert-circle" size={18} />
+            {t(error)}
           </p>
-        </form>
-      </div>
-    </div>
+        )}
+
+        <button className={`btn primary lg block${busy ? " loading" : ""}`} disabled={busy}>
+          {busy && <span className="btn-spinner" aria-hidden="true" />}
+          <span>{mode === "in" ? t("signIn") : t("signUp")}</span>
+        </button>
+
+        <p className="auth-switch">
+          {mode === "in" ? t("noAccount") : t("haveAccount")}{" "}
+          <button
+            type="button"
+            className="linkish"
+            onClick={() => {
+              setMode(mode === "in" ? "up" : "in");
+              setError(null);
+            }}
+          >
+            {mode === "in" ? t("signUp") : t("signIn")}
+          </button>
+        </p>
+      </form>
+    </Dialog>
   );
 }

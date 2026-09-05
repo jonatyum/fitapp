@@ -6,6 +6,7 @@ import { translateName } from "../i18n/translateName";
 import type { Stats, WorkoutSession } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ProOnly } from "./PlansView";
+import { Icon } from "./ui/Icon";
 
 /** Plot height in px — bars are sized in pixels, matching .chart-track in CSS. */
 const CHART_H = 130;
@@ -49,14 +50,14 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
     await load();
   };
 
-  if (loading) return <div className="status">{t("loading")}</div>;
+  if (loading) return <p className="status" role="status">{t("loading")}</p>;
 
   if (locked) return <ProOnly onSeePlans={onSeePlans} />;
 
   if (!stats || stats.totalSessions === 0) {
     return (
-      <div className="empty">
-        <div className="empty-icon">📈</div>
+      <div className="empty first-use">
+        <Icon name="chart" size={48} className="empty-icon" />
         <h2>{t("noSessionsTitle")}</h2>
         <p>{t("noSessionsText")}</p>
       </div>
@@ -68,6 +69,8 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
 
   return (
     <div className="progress">
+      <h1 className="sr-only">{t("progress")}</h1>
+
       <div className="stat-grid">
         <div className="stat">
           <span className="stat-value">{stats.totalSessions}</span>
@@ -84,16 +87,23 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
           <span className="stat-label">{t("statSets")}</span>
         </div>
         <div className="stat">
-          <span className="stat-value">🔥 {stats.streakWeeks}</span>
+          <span className="stat-value">
+            <Icon name="flame" size={20} />
+            {stats.streakWeeks}
+          </span>
           <span className="stat-label">{t("statStreak")}</span>
         </div>
       </div>
 
       <section className="panel">
-        <div className="section-label">{t("weeklyVolume")}</div>
+        <h2 className="section-label">{t("weeklyVolume")}</h2>
         <div className="chart">
           {stats.weekly.map((w) => (
-            <div className="chart-col" key={w.week} title={`${Math.round(w.volume)} kg`}>
+            <div
+              className="chart-col"
+              key={w.week}
+              title={`${Math.round(w.volume).toLocaleString(lang)} ${t("weightCol")}`}
+            >
               <div className="chart-track">
                 <div
                   className={`chart-bar ${w.volume ? "" : "flat"}`}
@@ -109,7 +119,7 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
       <div className="panel-row">
         {stats.topExercises.length > 0 && (
           <section className="panel">
-            <div className="section-label">{t("topExercises")}</div>
+            <h2 className="section-label">{t("topExercises")}</h2>
             <ul className="ranklist">
               {stats.topExercises.map((e) => (
                 <li key={e.exerciseId}>
@@ -129,11 +139,13 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
 
         {stats.records.length > 0 && (
           <section className="panel">
-            <div className="section-label">{t("personalRecords")}</div>
+            <h2 className="section-label">{t("personalRecords")}</h2>
             <ul className="ranklist">
               {stats.records.map((r) => (
                 <li key={r.exerciseId}>
-                  <span className="medal">🏅</span>
+                  <span className="rank-icon">
+                    <Icon name="medal" size={20} />
+                  </span>
                   <span className="rank-main">
                     <strong>{translateName(r.name, lang)}</strong>
                     <small>
@@ -151,7 +163,7 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
       </div>
 
       <section className="panel">
-        <div className="section-label">{t("historyTitle")}</div>
+        <h2 className="section-label">{t("historyTitle")}</h2>
         <ul className="historylist">
           {sessions.map((s) => (
             <li key={s.id}>
@@ -169,12 +181,12 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
                 {compact(s.volume ?? 0, lang)} {t("weightCol")}
               </span>
               <button
-                className="icon-btn danger"
+                className="btn icon ghost sm"
                 onClick={() => setPendingDelete(s.id)}
                 aria-label={t("delete")}
                 title={t("delete")}
               >
-                🗑
+                <Icon name="trash" size={18} />
               </button>
             </li>
           ))}

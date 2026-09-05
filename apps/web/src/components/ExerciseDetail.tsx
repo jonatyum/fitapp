@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { mediaUrl } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 import { translateName } from "../i18n/translateName";
 import { DEFAULT_LANG } from "../i18n/languages";
 import type { Exercise } from "../types";
+import { Dialog } from "./ui/Dialog";
 
 export function ExerciseDetail({
   ex,
@@ -13,16 +13,6 @@ export function ExerciseDetail({
   onClose: () => void;
 }) {
   const { t, tv, lang } = useI18n();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
 
   // Prefer step-by-step in the active language; fall back to Spanish/English,
   // then to splitting the paragraph instructions.
@@ -37,50 +27,44 @@ export function ExerciseDetail({
   const secondary = ex.secondaryMuscles?.filter(Boolean) ?? [];
 
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t("close")}>
-          ✕
-        </button>
-        <div className="modal-scroll">
-          <div className="modal-grid">
-            <div className="modal-media">
-              <img src={mediaUrl(ex.gifUrl)} alt={ex.name} />
-            </div>
-            <div className="modal-body">
-              <h2>{translateName(ex.name, lang)}</h2>
+    <Dialog title={translateName(ex.name, lang)} onClose={onClose} wide>
+      <div className="exercise-detail">
+        <div className="exercise-media">
+          <img src={mediaUrl(ex.gifUrl)} alt="" />
+        </div>
 
-              <div className="meta-row">
-                <span className="badge accent">{tv(ex.target)}</span>
-                <span className="badge soft">{tv(ex.bodyPart)}</span>
-                <span className="badge soft">{tv(ex.equipment)}</span>
-              </div>
-
-              {secondary.length > 0 && (
-                <>
-                  <div className="section-label">{t("secondaryLabel")}</div>
-                  <div className="meta-row" style={{ margin: 0 }}>
-                    {secondary.map((m) => (
-                      <span key={m} className="badge soft">
-                        {tv(m)}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <div className="section-label">{t("steps")}</div>
-              <ol className="steps">
-                {steps.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ol>
-
-              <p className="attribution">{ex.attribution}</p>
-            </div>
+        <div className="exercise-info">
+          <div className="meta-row">
+            <span className="badge brand">{tv(ex.target)}</span>
+            <span className="badge soft">{tv(ex.bodyPart)}</span>
+            <span className="badge soft">{tv(ex.equipment)}</span>
           </div>
+
+          {secondary.length > 0 && (
+            <div>
+              <h3 className="section-label">{t("secondaryLabel")}</h3>
+              <div className="meta-row">
+                {secondary.map((m) => (
+                  <span key={m} className="badge soft">
+                    {tv(m)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 className="section-label">{t("steps")}</h3>
+            <ol className="steps">
+              {steps.map((s, i) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ol>
+          </div>
+
+          <p className="attribution">{ex.attribution}</p>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from "../i18n/plan";
 import type { GeneratedRoutine, Goal, Level, Meta, Place, Routine } from "../types";
 import { DayCard } from "./DayCard";
+import { Icon, type IconName } from "./ui/Icon";
 
 const DAY_CHOICES = [2, 3, 4, 5, 6];
 
@@ -38,10 +39,10 @@ const ORDER: Step[] = ["place", "goal", "days", "level", "equipment", "preview"]
  * Asked first, because it decides everything downstream: at home the generator
  * treats the kit as a hard boundary instead of a preference.
  */
-const PLACES = [
-  { id: "home", icon: "🏠", title: "placeHome", desc: "placeHomeDesc" },
-  { id: "gym", icon: "🏋️", title: "placeGym", desc: "placeGymDesc" },
-] as const;
+const PLACES: { id: Place; icon: IconName; title: "placeHome" | "placeGym"; desc: "placeHomeDesc" | "placeGymDesc" }[] = [
+  { id: "home", icon: "home", title: "placeHome", desc: "placeHomeDesc" },
+  { id: "gym", icon: "dumbbell", title: "placeGym", desc: "placeGymDesc" },
+];
 
 /** Preselected when "at home" is picked; the equipment step still refines it. */
 const HOME_KIT = ["body weight", "band", "resistance band", "dumbbell"];
@@ -113,7 +114,8 @@ export function RoutineWizard({
     <div className="wizard">
       <div className="wizard-head">
         <button className="btn ghost" onClick={goBack}>
-          ← {t("back")}
+          <Icon name="chevron-left" size={18} />
+          {t("back")}
         </button>
         <div className="wizard-dots">
           {ORDER.map((s, i) => (
@@ -129,7 +131,8 @@ export function RoutineWizard({
             {PLACES.map((opt) => (
               <button
                 key={opt.id}
-                className={`choice ${place === opt.id ? "on" : ""}`}
+                className="choice"
+                aria-pressed={place === opt.id}
                 onClick={() => {
                   setPlace(opt.id);
                   // Sensible starting kit; the equipment step can still change it.
@@ -140,7 +143,8 @@ export function RoutineWizard({
                 }}
               >
                 <strong>
-                  <span aria-hidden="true">{opt.icon}</span> {t(opt.title)}
+                  <Icon name={opt.icon} size={18} />
+                  {t(opt.title)}
                 </strong>
                 <small>{t(opt.desc)}</small>
               </button>
@@ -156,7 +160,8 @@ export function RoutineWizard({
             {GOALS.map((g) => (
               <button
                 key={g}
-                className={`choice ${goal === g ? "on" : ""}`}
+                className="choice"
+                aria-pressed={goal === g}
                 onClick={() => {
                   setGoal(g);
                   setStep("days");
@@ -177,7 +182,8 @@ export function RoutineWizard({
             {DAY_CHOICES.map((d) => (
               <button
                 key={d}
-                className={`choice big ${days === d ? "on" : ""}`}
+                className="choice big"
+                aria-pressed={days === d}
                 onClick={() => {
                   setDays(d);
                   setStep("level");
@@ -198,7 +204,8 @@ export function RoutineWizard({
             {LEVELS.map((l) => (
               <button
                 key={l}
-                className={`choice ${level === l ? "on" : ""}`}
+                className="choice"
+                aria-pressed={level === l}
                 onClick={() => {
                   setLevel(l);
                   setStep("equipment");
@@ -220,9 +227,11 @@ export function RoutineWizard({
             {choices.map((e) => (
               <button
                 key={e}
-                className={`checkchip ${equipment.includes(e) ? "on" : ""}`}
+                className="chip capitalize"
+                aria-pressed={equipment.includes(e)}
                 onClick={() => toggleEquipment(e)}
               >
+                {equipment.includes(e) && <Icon name="check" size={14} />}
                 {tv(e)}
               </button>
             ))}
@@ -234,31 +243,52 @@ export function RoutineWizard({
             <button className="btn ghost" onClick={() => setEquipment(choices)}>
               {t("selectAll")}
             </button>
-            <button className="btn primary" onClick={generate} disabled={busy}>
-              {busy ? t("generating") : t("generateRoutine")}
+            <button
+              className={`btn primary lg${busy ? " loading" : ""}`}
+              onClick={generate}
+              disabled={busy}
+              aria-busy={busy}
+            >
+              {busy && <span className="btn-spinner" aria-hidden="true" />}
+              <span>{t("generateRoutine")}</span>
             </button>
           </div>
-          {error && <div className="form-error">{t("errGeneric")}</div>}
+          {error && (
+            <p className="form-error" role="alert">
+              <Icon name="alert-circle" size={18} />
+              {t("errGeneric")}
+            </p>
+          )}
         </fieldset>
       )}
 
       {step === "preview" && plan && (
         <>
           <div className="preview-head">
-            <label className="field grow">
-              <span>{t("routineNameLabel")}</span>
+            <div className="field grow">
+              <label className="field-label" htmlFor="routine-name">
+                {t("routineNameLabel")}
+              </label>
               <input
+                id="routine-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("routineNamePlaceholder")}
               />
-            </label>
+            </div>
             <div className="preview-actions">
-              <button className="btn ghost" onClick={generate} disabled={busy}>
-                ↻ {t("regenerate")}
+              <button className="btn secondary" onClick={generate} disabled={busy}>
+                <Icon name="refresh" size={18} />
+                {t("regenerate")}
               </button>
-              <button className="btn primary" onClick={save} disabled={busy}>
-                {busy ? t("loading") : t("saveRoutine")}
+              <button
+                className={`btn primary${busy ? " loading" : ""}`}
+                onClick={save}
+                disabled={busy}
+                aria-busy={busy}
+              >
+                {busy && <span className="btn-spinner" aria-hidden="true" />}
+                <span>{t("saveRoutine")}</span>
               </button>
             </div>
           </div>
@@ -266,7 +296,12 @@ export function RoutineWizard({
             {tSplit(plan.split, lang)} · {t("perWeek", { n: plan.daysPerWeek })} ·{" "}
             {tGoal(plan.goal, lang)} · {tLevel(plan.level, lang)}
           </p>
-          {error && <div className="form-error">{t("errGeneric")}</div>}
+          {error && (
+            <p className="form-error" role="alert">
+              <Icon name="alert-circle" size={18} />
+              {t("errGeneric")}
+            </p>
+          )}
 
           <div className="daylist">
             {plan.days.map((d, i) => (

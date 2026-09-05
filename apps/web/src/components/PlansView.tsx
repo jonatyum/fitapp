@@ -4,6 +4,8 @@ import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import type { UIKey } from "../i18n/ui";
 import type { BillingCatalog, ChargeInstructions, Subscription } from "../types";
+import { Icon } from "./ui/Icon";
+import { useToast } from "./ui/Toast";
 
 /** Feature bullets per plan; the catalog only carries prices. */
 const FEATURES: Record<string, UIKey[]> = {
@@ -11,18 +13,23 @@ const FEATURES: Record<string, UIKey[]> = {
   pro: ["planProF1", "planProF2", "planProF3"],
 };
 
-/** Copy button that confirms in place instead of opening a toast. */
+/** Instrucciones de transferencia más el importe ya formateado por la API. */
+interface Charge {
+  instructions: ChargeInstructions;
+  amountLabel: string;
+}
+
 function CopyField({ label, value }: { label: string; value: string }) {
   const { t } = useI18n();
-  const [done, setDone] = useState(false);
+  const { toast } = useToast();
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(value);
-      setDone(true);
-      setTimeout(() => setDone(false), 1500);
+      toast(`${label}: ${t("payCopied")}`, "success");
     } catch {
-      // Clipboard is blocked on insecure origins; the value is on screen anyway.
+      // El portapapeles está bloqueado en orígenes inseguros; el valor está
+      // a la vista de todos modos.
     }
   };
 
@@ -30,25 +37,24 @@ function CopyField({ label, value }: { label: string; value: string }) {
     <div className="pay-field">
       <span className="pay-field-label">{label}</span>
       <span className="pay-field-value">{value}</span>
-      <button className="btn ghost small" onClick={copy}>
-        {done ? t("payCopied") : t("payCopy")}
+      <button className="btn secondary sm" onClick={copy} aria-label={`${t("payCopy")} ${label}`}>
+        <Icon name="check" size={16} />
+        {t("payCopy")}
       </button>
     </div>
   );
 }
 
-function TransferInstructions({ instructions }: { instructions: ChargeInstructions }) {
+function TransferInstructions({ charge }: { charge: Charge }) {
   const { t } = useI18n();
-  const amount = `${instructions.currency === "BOB" ? "Bs" : instructions.currency} ${(
-    instructions.amountCents / 100
-  ).toFixed(2)}`;
+  const { instructions, amountLabel } = charge;
 
   return (
     <section className="panel pay-panel">
-      <div className="section-label">{t("payTitle")}</div>
+      <h2 className="section-label">{t("payTitle")}</h2>
 
       <ol className="pay-steps">
-        <li>{t("payStep1", { amount })}</li>
+        <li>{t("payStep1", { amount: amountLabel })}</li>
         <li>{t("payStep2", { ref: instructions.reference })}</li>
         <li>{t("payStep3", { contact: instructions.contact })}</li>
       </ol>
@@ -64,7 +70,7 @@ function TransferInstructions({ instructions }: { instructions: ChargeInstructio
         )}
         <CopyField label={t("payAccountNumber")} value={instructions.accountNumber} />
         <CopyField label={t("payReference")} value={instructions.reference} />
-        <CopyField label={t("payAmount")} value={amount} />
+        <CopyField label={t("payAmount")} value={amountLabel} />
         <CopyField label={t("payContact")} value={instructions.contact} />
       </div>
     </section>
@@ -77,7 +83,7 @@ export function PlansView({ onSignIn }: { onSignIn: () => void }) {
 
   const [catalog, setCatalog] = useState<BillingCatalog | null>(null);
   const [sub, setSub] = useState<Subscription | null>(null);
-  const [instructions, setInstructions] = useState<ChargeInstructions | null>(null);
+  const [charge, setCharge] = useState<Charge | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<UIKey | null>(null);
@@ -105,10 +111,15 @@ export function PlansView({ onSignIn }: { onSignIn: () => void }) {
     setError(null);
     setBusy(true);
     try {
-      const { charge } = await apiCheckout(planCode);
+      const result = await apiCheckout(planCode);
       // A hosted checkout takes over the tab; a transfer renders in place.
-      if (charge.kind === "redirect") window.location.href = charge.url;
-      else setInstructions(charge.instructions);
+      if (result.charge.kind === "redirect") window.location.href = result.charge.url;
+      else
+        setCharge({
+          instructions: result.charge.instructions,
+          // El importe ya viene formateado por la API; no lo recalculamos.
+          amountLabel: result.payment.amountLabel,
+        });
       await load();
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
@@ -122,8 +133,13 @@ export function PlansView({ onSignIn }: { onSignIn: () => void }) {
     }
   };
 
-  if (loading) return <div className="status">{t("loading")}</div>;
-  if (!catalog) return <div className="status">{t("errGeneric")}</div>;
+  if (loading)
+    return (
+      <p className="status" role="status">
+        {t("loading")}
+      </p>
+    );
+  if (!catalog) return <p className="status error">{t("loadError")}</p>;
 
   const dateFmt = new Intl.DateTimeFormat(lang, { day: "numeric", month: "long", year: "numeric" });
   const fmtDate = (iso: string) => dateFmt.format(new Date(iso));
@@ -133,60 +149,79 @@ export function PlansView({ onSignIn }: { onSignIn: () => void }) {
   return (
     <div className="plans">
       <header className="plans-head">
-        <h2>{t("plansTitle")}</h2>
+        <h1>{t("plansTitle")}</h1>
         <p>{t("plansSubtitle")}</p>
       </header>
 
       {sub?.isPro && (
         <div className="sub-banner active">
-          <span className="badge accent">{t("subActive")}</span>
+          <span className="badge accent">
+            <Icon name="sparkle" size={12} />
+            {t("subActive")}
+          </span>
           {sub.expiresAt && <span>{t("subRenewsOn", { date: fmtDate(sub.expiresAt) })}</span>}
         </div>
       )}
 
       {sub?.status === "expired" && (
         <div className="sub-banner">
-          <span className="badge soft">{t("subExpired")}</span>
+          <span className="badge warning">
+            <span className="badge-dot" />
+            {t("subExpired")}
+          </span>
           {sub.expiresAt && <span>{t("subExpiredOn", { date: fmtDate(sub.expiresAt) })}</span>}
         </div>
       )}
 
-      {pending && !instructions && (
+      {pending && !charge && (
         <div className="sub-banner">
-          <span className="badge soft">{t("payPending")}</span>
+          <span className="badge info">
+            <span className="badge-dot" />
+            {t("payPending")}
+          </span>
           <span>{t("payPendingHint", { ref: pending.reference })}</span>
         </div>
       )}
 
-      {error && <div className="status error">{t(error)}</div>}
-      {!canPay && !error && <div className="status">{t("payNoProvider")}</div>}
+      {error && (
+        <p className="form-error" role="alert">
+          <Icon name="alert-circle" size={18} />
+          {t(error)}
+        </p>
+      )}
+      {!canPay && !error && <p className="status">{t("payNoProvider")}</p>}
 
       <div className="plan-grid">
         {catalog.plans.map((plan) => {
           const isCurrent = (sub?.isPro ? "pro" : "free") === plan.code;
           const isPro = plan.code === "pro";
           return (
-            <section key={plan.code} className={`panel plan-card${isPro ? " featured" : ""}`}>
-              <div className="plan-name">{t(isPro ? "planProName" : "planFreeName")}</div>
+            <section key={plan.code} className={`card panel plan-card${isPro ? " featured" : ""}`}>
+              <h2 className="plan-name">{t(isPro ? "planProName" : "planFreeName")}</h2>
               <div className="plan-price">
                 {plan.amountLabel}
                 {plan.periodDays > 0 && <em>{t("planPerMonth")}</em>}
               </div>
               <ul className="plan-features">
                 {(FEATURES[plan.code] ?? []).map((k) => (
-                  <li key={k}>{t(k)}</li>
+                  <li key={k}>
+                    <Icon name="check" size={16} />
+                    {t(k)}
+                  </li>
                 ))}
               </ul>
               {isCurrent ? (
-                <div className="plan-current">{t("planCurrent")}</div>
+                <p className="plan-current">{t("planCurrent")}</p>
               ) : (
                 isPro && (
                   <button
-                    className="btn primary block"
+                    className={`btn primary lg block${busy ? " loading" : ""}`}
                     disabled={busy || !canPay}
+                    aria-busy={busy}
                     onClick={() => start(plan.code)}
                   >
-                    {sub?.status === "expired" ? t("subRenew") : t("planChoose")}
+                    {busy && <span className="btn-spinner" aria-hidden="true" />}
+                    <span>{sub?.status === "expired" ? t("subRenew") : t("planChoose")}</span>
                   </button>
                 )
               )}
@@ -195,10 +230,10 @@ export function PlansView({ onSignIn }: { onSignIn: () => void }) {
         })}
       </div>
 
-      {instructions && (
+      {charge && (
         <>
-          <TransferInstructions instructions={instructions} />
-          <button className="btn ghost block" onClick={() => setInstructions(null)}>
+          <TransferInstructions charge={charge} />
+          <button className="btn secondary block" onClick={() => setCharge(null)}>
             {t("payClose")}
           </button>
         </>
@@ -211,11 +246,12 @@ export function PlansView({ onSignIn }: { onSignIn: () => void }) {
 export function ProOnly({ onSeePlans }: { onSeePlans: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="empty">
-      <div className="empty-icon">🔒</div>
+    <div className="empty locked">
+      <Icon name="lock" size={48} className="empty-icon" />
+      <span className="badge brand">{t("planProName")}</span>
       <h2>{t("proOnlyTitle")}</h2>
       <p>{t("proOnlyText")}</p>
-      <button className="btn primary" onClick={onSeePlans}>
+      <button className="btn primary lg" onClick={onSeePlans}>
         {t("proSeePlans")}
       </button>
     </div>

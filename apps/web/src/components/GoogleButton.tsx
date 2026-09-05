@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { initGoogle, loadGoogleScript } from "../auth/google";
 import { useI18n } from "../i18n/I18nContext";
+import { useTheme } from "../theme";
 
 /** Google renders its own button, so it needs an explicit pixel width. */
 const clampWidth = (w: number) => Math.min(400, Math.max(200, Math.round(w)));
@@ -18,6 +19,7 @@ export function GoogleButton({
   onError: () => void;
 }) {
   const { lang } = useI18n();
+  const { theme } = useTheme();
   const host = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,11 +34,7 @@ export function GoogleButton({
 
         el.innerHTML = ""; // renderButton appends, so clear on re-render
         window.google.accounts.id.renderButton(el, {
-          // The toggle writes data-theme on <html>; useTheme isn't shared state.
-          theme:
-            document.documentElement.getAttribute("data-theme") === "dark"
-              ? "filled_black"
-              : "outline",
+          theme: theme === "dark" ? "filled_black" : "outline",
           size: "large",
           shape: "pill",
           logo_alignment: "center",
@@ -52,7 +50,7 @@ export function GoogleButton({
     return () => {
       cancelled = true;
     };
-  }, [clientId, mode, lang, onCredential, onError]);
+  }, [clientId, mode, lang, theme, onCredential, onError]);
 
   return <div className="gbtn" ref={host} />;
 }
