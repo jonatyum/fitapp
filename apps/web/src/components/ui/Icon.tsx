@@ -39,6 +39,7 @@ export type IconName =
   | "medal"
   | "eye"
   | "refresh"
+  | "swap"
   | "sparkle";
 
 const PATHS: Record<IconName, JSX.Element> = {
@@ -152,6 +153,9 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   refresh: <path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4.5h-4.5" />,
+  // Intercambio: dos carriles en sentidos opuestos. No es el circular de
+  // `refresh`, que significa "regenerar", sino "cambiar esto por otra cosa".
+  swap: <path d="M4 8h13M14 5l3 3-3 3M20 16H7m3-3-3 3 3 3" />,
   sparkle: <path d="m12 3 2 5.6 5.6 2-5.6 2-2 5.6-2-5.6-5.6-2 5.6-2zM18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />,
 };
 

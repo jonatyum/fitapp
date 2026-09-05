@@ -1828,6 +1828,33 @@ h1, h2, h3, h4 { text-wrap: balance; }
 
 .exlist { display: flex; flex-direction: column; }
 .exlist li + li { border-top: 1px solid var(--border); }
+
+/* Fila con acción de cambio: el ejercicio ocupa el ancho y el botón se ancla
+   al final, sin robarle área táctil a la fila. */
+.exline { display: flex; align-items: center; }
+.exline .exrow { min-width: 0; }
+.exswap { flex: 0 0 auto; margin-right: var(--space-2); color: var(--text-3); }
+@media (hover: hover) {
+  .exline:hover .exswap { color: var(--brand-text); }
+}
+.exswap:focus-visible { color: var(--brand-text); }
+
+/* Diálogo de alternativas */
+.swap-current {
+  margin: 0 0 var(--space-4);
+  color: var(--text-2);
+  font-size: var(--text-base);
+}
+.swap-current strong { color: var(--text); font-weight: var(--weight-semibold); }
+.swap-note {
+  margin: 0 0 var(--space-2);
+  color: var(--text-3);
+  font-size: var(--text-xs);
+}
+.swap-pick { flex: 0 0 auto; color: var(--text-3); }
+@media (hover: hover) {
+  .exrow:hover .swap-pick { color: var(--brand-text); }
+}
 .exrow {
   display: flex;
   align-items: center;

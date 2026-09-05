@@ -5,6 +5,7 @@ import {
   GOALS,
   LEVELS,
   PLACES,
+  alternativesFor,
   generateRoutine,
   type Goal,
   type Level,
@@ -165,6 +166,86 @@ export function registerRoutines(app: FastifyInstance) {
           ...(req.body?.name !== undefined ? { name: req.body.name.trim() } : {}),
           ...(req.body?.active !== undefined ? { active: req.body.active } : {}),
         },
+      });
+    },
+  );
+
+  /**
+   * Swap candidates for one slot. Stateless on purpose: the generator preview
+   * has no routine id yet, and a saved routine already holds everything this
+   * needs client-side, so both callers share one contract.
+   */
+  app.post<{
+    Body: {
+      slot?: string;
+      level?: string;
+      equipment?: string[];
+      place?: string;
+      exclude?: string[];
+      limit?: number;
+    };
+  }>("/routines/alternatives", auth, async (req, reply) => {
+    const b = req.body;
+    if (!b?.slot || typeof b.slot !== "string" || !isLevel(b.level)) {
+      return reply.code(400).send({ error: "invalid_alternatives" });
+    }
+    const items = await alternativesFor({
+      slot: b.slot,
+      level: b.level,
+      equipment: Array.isArray(b.equipment) ? b.equipment : [],
+      place: isPlace(b.place) ? b.place : undefined,
+      exclude: Array.isArray(b.exclude) ? b.exclude : [],
+      limit: typeof b.limit === "number" ? b.limit : undefined,
+    });
+    return { items };
+  });
+
+  /**
+   * Replace the exercise in one row of a saved routine, keeping its slot,
+   * position and prescription: the plan's structure is the generator's
+   * reasoning, and swapping a movement should not silently rewrite it.
+   */
+  app.patch<{ Params: { id: string; exerciseId: string }; Body: { exerciseId?: string } }>(
+    "/routines/:id/exercises/:exerciseId",
+    auth,
+    async (req, reply) => {
+      const next = req.body?.exerciseId;
+      if (!next || typeof next !== "string") {
+        return reply.code(400).send({ error: "invalid_exercise" });
+      }
+
+      // Ownership is checked through the routine, not the row, so a row id
+      // from someone else's plan cannot be patched by guessing it.
+      const row = await prisma.routineExercise.findFirst({
+        where: {
+          id: req.params.exerciseId,
+          day: { routine: { id: req.params.id, userId: userId(req) } },
+        },
+        select: { id: true, dayId: true },
+      });
+      if (!row) return reply.code(404).send({ error: "not_found" });
+
+      const exists = await prisma.exercise.findUnique({
+        where: { id: next },
+        select: { id: true },
+      });
+      if (!exists) return reply.code(404).send({ error: "exercise_not_found" });
+
+      // Same exercise twice in one day is never intended.
+      const dupe = await prisma.routineExercise.findFirst({
+        where: { dayId: row.dayId, exerciseId: next, id: { not: row.id } },
+        select: { id: true },
+      });
+      if (dupe) return reply.code(409).send({ error: "already_in_day" });
+
+      await prisma.routineExercise.update({
+        where: { id: row.id },
+        data: { exerciseId: next },
+      });
+
+      return prisma.routine.findUnique({
+        where: { id: req.params.id },
+        include: routineInclude,
       });
     },
   );

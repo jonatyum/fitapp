@@ -28,6 +28,17 @@ export type RoutineKey =
   | "startWorkout"
   | "exercisesN"
   | "perWeek"
+  | "swapAction"
+  | "swapAria"
+  | "swapTitle"
+  | "swapCurrent"
+  | "swapFits"
+  | "swapNeedsKit"
+  | "swapNeedsKitHint"
+  | "swapEmpty"
+  | "swapFailed"
+  | "swapDuplicate"
+  | "swapDone"
   | "wizPlace"
   | "placeHome"
   | "placeHomeDesc"
@@ -70,6 +81,17 @@ export const routine: Record<Lang, Record<RoutineKey, string>> = {
     placeGym: "At the gym",
     placeGymDesc: "Barbells, machines and cables available",
     equipmentHintHome: "Tick only what you actually have. Nothing ticked = the whole home kit.",
+    swapAction: "Swap exercise",
+    swapAria: "Swap {name} for another exercise",
+    swapTitle: "Swap exercise",
+    swapCurrent: "Right now:",
+    swapFits: "With your kit",
+    swapNeedsKit: "Needs other equipment",
+    swapNeedsKitHint: "You can still pick these, but you will need gear your plan does not assume.",
+    swapEmpty: "We found no other exercise for this slot.",
+    swapFailed: "We could not load the alternatives. Try again.",
+    swapDuplicate: "That exercise is already in this day. Pick a different one.",
+    swapDone: "Exercise swapped.",
   },
   es: {
     newRoutine: "Nueva rutina",
@@ -105,5 +127,16 @@ export const routine: Record<Lang, Record<RoutineKey, string>> = {
     placeGym: "En el gimnasio",
     placeGymDesc: "Con barras, máquinas y poleas disponibles",
     equipmentHintHome: "Marca solo lo que tengas de verdad. Sin marcar nada usamos todo el kit de casa.",
+    swapAction: "Cambiar ejercicio",
+    swapAria: "Cambiar {name} por otro ejercicio",
+    swapTitle: "Cambiar ejercicio",
+    swapCurrent: "Ahora mismo:",
+    swapFits: "Con tu equipo",
+    swapNeedsKit: "Necesita otro equipo",
+    swapNeedsKitHint: "Puedes elegirlos igual, pero necesitas material que tu plan no da por hecho.",
+    swapEmpty: "No encontramos otro ejercicio para este hueco.",
+    swapFailed: "No pudimos cargar las alternativas. Vuelve a intentar.",
+    swapDuplicate: "Ese ejercicio ya está en este día. Elige otro.",
+    swapDone: "Ejercicio cambiado.",
   },
 };
