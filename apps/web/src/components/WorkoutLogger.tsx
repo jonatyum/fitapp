@@ -231,7 +231,7 @@ export function WorkoutLogger({
             </tbody>
           </table>
 
-          <button className="btn secondary sm" onClick={() => addSet(exIdx)}>
+          <button className="btn secondary" onClick={() => addSet(exIdx)}>
             <Icon name="plus" size={16} />
             {t("addSet")}
           </button>
