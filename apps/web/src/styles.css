@@ -2288,9 +2288,6 @@ h1, h2, h3, h4 { text-wrap: balance; }
 @media (min-width: 768px) {
   :root { --gutter: var(--space-6); }
 
-  /* La navegación sube al header y la tabbar desaparece. */
-  .tabbar { display: none; }
-  .navtabs { display: flex; }
   .app-main { padding-block: var(--space-6) var(--space-12); }
 
   .lang-name { display: inline; }
@@ -2353,6 +2350,12 @@ h1, h2, h3, h4 { text-wrap: balance; }
 
 @media (min-width: 1024px) {
   :root { --gutter: var(--space-8); }
+
+  /* La navegación sube al header y la tabbar desaparece. Hasta 1024 no cabe:
+     las cinco pestañas con texto dejaban al buscador en 0px de ancho y
+     empujaban el tema y la cuenta fuera de la pantalla. */
+  .tabbar { display: none; }
+  .navtabs { display: flex; }
 
   .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
   .t-h1 { font-size: var(--text-4xl); }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "../../i18n/I18nContext";
 import { Icon } from "./Icon";
 
@@ -11,6 +12,10 @@ const FOCUSABLE =
  *
  * Cubre lo que las tres implementaciones anteriores no hacían: role/aria-modal,
  * trampa de foco, foco inicial y devolución del foco al disparador.
+ *
+ * Va por portal a `body` porque `position: fixed` deja de referirse al viewport
+ * dentro de un ancestro con `backdrop-filter` (o `transform`, o `filter`): la
+ * `.filterbar` lo tiene, y la hoja de los desplegables se salía por arriba.
  */
 export function Dialog({
   title,
@@ -91,7 +96,7 @@ export function Dialog({
     return () => document.removeEventListener("keydown", onKey, true);
   }, [focusables, onClose]);
 
-  return (
+  return createPortal(
     <div
       className="overlay"
       onMouseDown={(e) => {
@@ -132,6 +137,7 @@ export function Dialog({
 
         {footer && <div className="modal-footer">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
