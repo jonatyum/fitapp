@@ -147,6 +147,18 @@ export interface WorkoutSession {
   setCount?: number;
 }
 
+/**
+ * Lo que la home necesita para "cómo voy". Va aparte de `Stats` porque el panel
+ * completo es Pro y la racha nunca se cobra.
+ */
+export interface StatsSummary {
+  totalSessions: number;
+  sessionsThisWeek: number;
+  weekVolume: number;
+  streakWeeks: number;
+  lastSessionAt: string | null;
+}
+
 export interface Stats {
   totalSessions: number;
   totalVolume: number;

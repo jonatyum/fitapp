@@ -39,6 +39,8 @@ jobs:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
           # Serves assets from /<repo>/ to match the Pages URL.
           VITE_BASE: /${{ github.event.repository.name }}/
+      # Pages has no SPA fallback: without this, reloading /routine 404s.
+      - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/dist

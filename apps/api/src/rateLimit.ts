@@ -13,6 +13,13 @@ const MEDIA_PREFIX = "/media/";
 /** Provider callbacks: they retry on failure and must not share a user bucket. */
 const WEBHOOK_PREFIX = "/billing/webhook/";
 
+/**
+ * The plan generator runs unauthenticated so the activation path works without
+ * an account. Each call is a handful of catalogue queries, so it gets a bucket
+ * of its own instead of sharing the generous global one.
+ */
+const PLAN_ROUTES = new Set(["/routines/generate", "/routines/alternatives"]);
+
 const positiveInt = (value: string | undefined, fallback: number) => {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? Math.trunc(n) : fallback;
@@ -40,6 +47,10 @@ export async function registerRateLimit(app: FastifyInstance) {
     max: positiveInt(process.env.WEBHOOK_RATE_LIMIT_MAX, 120),
     timeWindow: windowOf(process.env.WEBHOOK_RATE_LIMIT_WINDOW, "1 minute"),
   };
+  const planLimit = {
+    max: positiveInt(process.env.PLAN_RATE_LIMIT_MAX, 30),
+    timeWindow: windowOf(process.env.PLAN_RATE_LIMIT_WINDOW, "1 minute"),
+  };
 
   // Per-route limits are picked up by the plugin's own `onRoute` hook, which
   // reads `config.rateLimit`. onRoute hooks run in registration order, so this
@@ -50,6 +61,8 @@ export async function registerRateLimit(app: FastifyInstance) {
 
     if (AUTH_ROUTES.has(url)) {
       route.config = { ...route.config, rateLimit: authLimit };
+    } else if (PLAN_ROUTES.has(url)) {
+      route.config = { ...route.config, rateLimit: planLimit };
     } else if (url.startsWith(MEDIA_PREFIX)) {
       route.config = { ...route.config, rateLimit: mediaLimit };
     } else if (url.startsWith(WEBHOOK_PREFIX)) {
@@ -72,7 +85,7 @@ export async function registerRateLimit(app: FastifyInstance) {
   });
 
   app.log.info(
-    { global: globalLimit, auth: authLimit, media: mediaLimit, webhook: webhookLimit },
+    { global: globalLimit, auth: authLimit, plan: planLimit, media: mediaLimit, webhook: webhookLimit },
     "rate limiting enabled",
   );
 }

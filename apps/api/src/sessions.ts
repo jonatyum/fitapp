@@ -144,6 +144,47 @@ export function registerSessions(app: FastifyInstance) {
   });
 
   /**
+   * Streak and the week in progress. `/stats` is Pro, but the streak is the
+   * retention loop and is never gated, so the home needs a summary that does
+   * not go through `requirePro`. Reads dates only, plus this week's sets.
+   */
+  app.get("/stats/summary", auth, async (req) => {
+    const uid = userId(req);
+    const thisWeek = weekStart(new Date());
+
+    const [dates, week] = await Promise.all([
+      prisma.workoutSession.findMany({
+        where: { userId: uid, finishedAt: { not: null } },
+        orderBy: { startedAt: "desc" },
+        select: { startedAt: true },
+      }),
+      prisma.workoutSession.findMany({
+        where: {
+          userId: uid,
+          finishedAt: { not: null },
+          startedAt: { gte: new Date(`${thisWeek}T00:00:00Z`) },
+        },
+        select: { sets: { select: { reps: true, weight: true } } },
+      }),
+    ]);
+
+    const weeks = new Set(dates.map((s) => weekStart(s.startedAt)));
+    let streakWeeks = 0;
+    for (let i = weeks.has(thisWeek) ? 0 : 1; i < 260; i++) {
+      if (!weeks.has(addWeeks(thisWeek, -i))) break;
+      streakWeeks += 1;
+    }
+
+    return {
+      totalSessions: dates.length,
+      sessionsThisWeek: week.length,
+      weekVolume: week.reduce((v, s) => v + volumeOf(s.sets), 0),
+      streakWeeks,
+      lastSessionAt: dates[0]?.startedAt ?? null,
+    };
+  });
+
+  /**
    * Aggregates for the progress dashboard — the first Pro-only feature.
    * Logging workouts stays free; only the analytics on top of the log are gated.
    */

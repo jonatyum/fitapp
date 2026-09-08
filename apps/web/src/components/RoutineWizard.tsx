@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiGenerateRoutine, apiSaveRoutine } from "../api";
+import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import {
   GOALS,
@@ -52,12 +53,16 @@ export function RoutineWizard({
   meta,
   onSaved,
   onCancel,
+  onRequireAuth,
 }: {
   meta: Meta | null;
   onSaved: (routine: Routine) => void;
   onCancel: () => void;
+  /** El plan se arma sin cuenta; guardarlo sí la exige. */
+  onRequireAuth: () => void;
 }) {
   const { t, tv, lang } = useI18n();
+  const { user } = useAuth();
 
   const [step, setStep] = useState<Step>("place");
   const [place, setPlace] = useState<Place>("home");
@@ -70,6 +75,8 @@ export function RoutineWizard({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  /** guardado en espera de que el usuario termine de crear su cuenta */
+  const [pendingSave, setPendingSave] = useState(false);
   /** ejercicio del preview que se está cambiando; el plan aún no existe en el servidor */
   const [swapping, setSwapping] = useState<{
     dayIndex: number;
@@ -128,7 +135,7 @@ export function RoutineWizard({
     }
   };
 
-  const save = async () => {
+  const save = useCallback(async () => {
     if (!plan) return;
     setBusy(true);
     setError(false);
@@ -139,6 +146,23 @@ export function RoutineWizard({
     } finally {
       setBusy(false);
     }
+  }, [plan, name, onSaved]);
+
+  // En cuanto la cuenta existe se guarda solo: el usuario ya pulsó guardar una
+  // vez y volver a pedírselo sería cobrarle dos veces el mismo gesto.
+  useEffect(() => {
+    if (!user || !pendingSave) return;
+    setPendingSave(false);
+    save();
+  }, [user, pendingSave, save]);
+
+  const requestSave = () => {
+    if (!user) {
+      setPendingSave(true);
+      onRequireAuth();
+      return;
+    }
+    save();
   };
 
   const stepIndex = ORDER.indexOf(step);
@@ -147,6 +171,8 @@ export function RoutineWizard({
 
   return (
     <div className="wizard">
+      <h1 className="sr-only">{t("newRoutine")}</h1>
+
       <div className="wizard-head">
         <button className="btn ghost" onClick={goBack}>
           <Icon name="chevron-left" size={18} />
@@ -318,7 +344,7 @@ export function RoutineWizard({
               </button>
               <button
                 className={`btn primary${busy ? " loading" : ""}`}
-                onClick={save}
+                onClick={requestSave}
                 disabled={busy}
                 aria-busy={busy}
               >
@@ -331,6 +357,7 @@ export function RoutineWizard({
             {tSplit(plan.split, lang)} · {t("perWeek", { n: plan.daysPerWeek })} ·{" "}
             {tGoal(plan.goal, lang)} · {tLevel(plan.level, lang)}
           </p>
+          {!user && <p className="hint">{t("saveNeedsAccount")}</p>}
           {error && (
             <p className="form-error" role="alert">
               <Icon name="alert-circle" size={18} />

@@ -13,6 +13,7 @@ export type RoutineKey =
   | "generating"
   | "regenerate"
   | "saveRoutine"
+  | "saveNeedsAccount"
   | "routineNameLabel"
   | "routineNamePlaceholder"
   | "daysValue"
@@ -59,6 +60,7 @@ export const routine: Record<Lang, Record<RoutineKey, string>> = {
     generateRoutine: "Generate routine",
     generating: "Building your plan…",
     regenerate: "Generate again",
+    saveNeedsAccount: "Saving your plan needs an account. It is free.",
     saveRoutine: "Save routine",
     routineNameLabel: "Routine name",
     routineNamePlaceholder: "e.g. Autumn block",
@@ -105,6 +107,7 @@ export const routine: Record<Lang, Record<RoutineKey, string>> = {
     generateRoutine: "Generar rutina",
     generating: "Armando tu plan…",
     regenerate: "Generar otra",
+    saveNeedsAccount: "Guardar tu plan necesita una cuenta. Es gratis.",
     saveRoutine: "Guardar rutina",
     routineNameLabel: "Nombre de la rutina",
     routineNamePlaceholder: "p. ej. Bloque de otoño",

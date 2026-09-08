@@ -5,6 +5,7 @@ import { catalog, type CatalogKey } from "./ui/catalog";
 import { common, type CommonKey } from "./ui/common";
 import { progress, type ProgressKey } from "./ui/progress";
 import { routine, type RoutineKey } from "./ui/routine";
+import { today, type TodayKey } from "./ui/today";
 import { workout, type WorkoutKey } from "./ui/workout";
 
 /**
@@ -23,7 +24,8 @@ export type UIKey =
   | RoutineKey
   | WorkoutKey
   | ProgressKey
-  | BillingKey;
+  | BillingKey
+  | TodayKey;
 
 export const UI: Record<Lang, Record<UIKey, string>> = {
   en: {
@@ -34,6 +36,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     ...workout.en,
     ...progress.en,
     ...billing.en,
+    ...today.en,
   },
   es: {
     ...common.es,
@@ -43,5 +46,6 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     ...workout.es,
     ...progress.es,
     ...billing.es,
+    ...today.es,
   },
 };
