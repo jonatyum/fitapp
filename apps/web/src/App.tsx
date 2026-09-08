@@ -3,6 +3,8 @@ import { fetchExercises, fetchMeta, fetchMuscleCounts } from "./api";
 import type { UIKey } from "./i18n/ui";
 import type { Exercise, Meta, Routine } from "./types";
 import { useI18n } from "./i18n/I18nContext";
+import { navigate, usePath } from "./router";
+import { PATHS, VIEW_BY_PATH, type View } from "./routes";
 import { useTheme } from "./theme";
 import { useAuth } from "./auth/AuthContext";
 import { LanguageMenu } from "./components/LanguageMenu";
@@ -12,22 +14,30 @@ import { ExerciseDetail } from "./components/ExerciseDetail";
 import { FilterBar, type FilterState } from "./components/FilterBar";
 import { MuscleMap } from "./components/MuscleMap";
 import { AuthModal } from "./components/AuthModal";
+import { MeView } from "./components/MeView";
 import { RoutineView } from "./components/RoutineView";
+import { RoutineWizard } from "./components/RoutineWizard";
+import { TodayView } from "./components/TodayView";
 import { WorkoutLogger } from "./components/WorkoutLogger";
 import { ProgressView } from "./components/ProgressView";
 import { PlansView } from "./components/PlansView";
 import { Icon, type IconName } from "./components/ui/Icon";
 import { Logo } from "./components/ui/Logo";
 
-type View = "catalog" | "map" | "routine" | "progress" | "billing";
-
+/**
+ * Cuatro pestañas. Progreso se alcanza desde Hoy, Planes desde Yo: ninguna de
+ * las dos es un sitio donde el usuario vaya a vivir, y una barra de cinco
+ * pestañas no deja sitio a la que importa.
+ */
 const NAV: { view: View; label: UIKey; icon: IconName }[] = [
-  { view: "catalog", label: "navCatalog", icon: "grid" },
-  { view: "map", label: "navMap", icon: "body" },
-  { view: "routine", label: "navRoutine", icon: "calendar" },
-  { view: "progress", label: "navProgress", icon: "chart" },
-  { view: "billing", label: "navPlans", icon: "credit-card" },
+  { view: "today", label: "navToday", icon: "home" },
+  { view: "routine", label: "navPlan", icon: "calendar" },
+  { view: "exercises", label: "navExercises", icon: "grid" },
+  { view: "me", label: "navMe", icon: "user" },
 ];
+
+/** Rutas sin pestaña propia que pertenecen a una. */
+const TAB_OF: Partial<Record<View, View>> = { wizard: "routine", workout: "routine" };
 
 export function App() {
   const { t } = useI18n();
@@ -41,10 +51,23 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<Exercise | null>(null);
-  const [view, setView] = useState<View>("catalog");
   const [authOpen, setAuthOpen] = useState(false);
+  /** lista o cuerpo: dos pieles del mismo catálogo */
+  const [mode, setMode] = useState<"list" | "body">("list");
   /** non-null while a workout is being logged */
   const [workout, setWorkout] = useState<{ routine: Routine; dayIndex: number } | null>(null);
+
+  const path = usePath();
+  const view = VIEW_BY_PATH[path] ?? "today";
+
+  useEffect(() => {
+    // Una ruta desconocida cae a Hoy, y /workout sin entrenamiento en curso
+    // (una recarga, por ejemplo) vuelve al plan. Sin cuenta no hay plan que
+    // enseñar: la pestaña lleva al asistente, que es el camino de activación.
+    if (!VIEW_BY_PATH[path]) navigate(PATHS.today, { replace: true });
+    else if (view === "workout" && !workout) navigate(PATHS.routine, { replace: true });
+    else if (view === "routine" && ready && !user) navigate(PATHS.wizard, { replace: true });
+  }, [path, view, workout, ready, user]);
 
   const [q, setQ] = useState("");
   const [filters, setFilters] = useState<FilterState>({
@@ -63,7 +86,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (view !== "catalog") return;
+    if (view !== "exercises") return;
     setLoading(true);
     const timer = setTimeout(() => {
       fetchExercises({ q, ...filters, limit: 60 })
@@ -88,31 +111,25 @@ export function App() {
       muscle: keys.join(","),
       tag: f.tag,
     }));
-    setView("catalog");
+    setMode("list");
   };
 
-  /** Views that need an account; anonymous visitors get a sign-in prompt. */
+  const browse = () => {
+    setMode("list");
+    navigate(PATHS.exercises);
+  };
+
+  const startWorkout = (routine: Routine, dayIndex: number) => {
+    setWorkout({ routine, dayIndex });
+    navigate(PATHS.workout);
+  };
+
   const go = (next: View) => {
-    if ((next === "routine" || next === "progress") && !user) {
-      setAuthOpen(true);
-      return;
-    }
-    setView(next);
     setWorkout(null);
+    navigate(PATHS[next]);
   };
 
-  const signInPrompt = (
-    <div className="empty first-use">
-      <Icon name="lock" size={48} className="empty-icon" />
-      <h2>{t("signIn")}</h2>
-      <p>{t("authRequired")}</p>
-      <button className="btn primary lg" onClick={() => setAuthOpen(true)}>
-        {t("signIn")}
-      </button>
-    </div>
-  );
-
-  const navItems = NAV.map((n) => ({ ...n, current: view === n.view && !workout }));
+  const navItems = NAV.map((n) => ({ ...n, current: (TAB_OF[view] ?? view) === n.view }));
 
   return (
     <>
@@ -132,7 +149,7 @@ export function App() {
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
-              setView("catalog");
+              browse();
             }}
           />
         </div>
@@ -176,78 +193,109 @@ export function App() {
         </div>
       </header>
 
-      {view === "catalog" && !workout && (
+      {view === "exercises" && (
         <FilterBar
           meta={meta}
           filters={filters}
           set={setFilter}
           total={total}
           loading={loading}
+          mode={mode}
+          onMode={setMode}
         />
       )}
 
       <main id="main" className="app-main">
-        {view === "catalog" && !workout && (
-          <div className="container wide">
-            <h1 className="sr-only">{t("catalogList")}</h1>
-            <div className="grid" aria-busy={loading}>
-              {failed && <div className="status error">{t("loadError")}</div>}
-              {loading &&
-                items.length === 0 &&
-                Array.from({ length: 15 }).map((_, i) => <SkeletonCard key={i} />)}
-              {!loading && !failed && items.length === 0 && (
-                <div className="status">{t("noResults")}</div>
-              )}
-              {items.map((ex) => (
-                <ExerciseCard key={ex.id} ex={ex} onOpen={setSelected} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {view === "map" && !workout && (
-          <div className="container">
-            <h1 className="sr-only">{t("navMap")}</h1>
-            <MuscleMap activeMuscle={filters.muscle} counts={counts} onSelect={selectMuscle} />
-          </div>
-        )}
-
-        {view === "routine" && !workout && (
+        {view === "today" && (
           <div className="container narrow">
-            {user ? (
-              <RoutineView
-                meta={meta}
-                onOpenExercise={setSelected}
-                onStartWorkout={(routine, dayIndex) => setWorkout({ routine, dayIndex })}
-              />
+            <TodayView onStartWorkout={startWorkout} onSignIn={() => setAuthOpen(true)} />
+          </div>
+        )}
+
+        {view === "exercises" && (
+          <div className={`container ${mode === "list" ? "wide" : ""}`}>
+            <h1 className="sr-only">{t("navExercises")}</h1>
+            {mode === "list" ? (
+              <div className="grid" aria-busy={loading}>
+                {failed && <div className="status error">{t("loadError")}</div>}
+                {loading &&
+                  items.length === 0 &&
+                  Array.from({ length: 15 }).map((_, i) => <SkeletonCard key={i} />)}
+                {!loading && !failed && items.length === 0 && (
+                  <div className="status">{t("noResults")}</div>
+                )}
+                {items.map((ex) => (
+                  <ExerciseCard key={ex.id} ex={ex} onOpen={setSelected} />
+                ))}
+              </div>
             ) : (
-              signInPrompt
+              <MuscleMap activeMuscle={filters.muscle} counts={counts} onSelect={selectMuscle} />
             )}
           </div>
         )}
 
-        {view === "progress" && !workout && (
+        {view === "routine" && (
           <div className="container narrow">
-            {user ? <ProgressView onSeePlans={() => setView("billing")} /> : signInPrompt}
+            <RoutineView onOpenExercise={setSelected} onStartWorkout={startWorkout} />
           </div>
         )}
 
-        {view === "billing" && !workout && (
+        {view === "wizard" && (
+          <div className="container narrow">
+            <RoutineWizard
+              meta={meta}
+              onRequireAuth={() => setAuthOpen(true)}
+              onCancel={() => navigate(user ? PATHS.routine : PATHS.today)}
+              onSaved={() => navigate(PATHS.routine)}
+            />
+          </div>
+        )}
+
+        {view === "me" && (
+          <div className="container narrow">
+            <MeView onSignIn={() => setAuthOpen(true)} />
+          </div>
+        )}
+
+        {view === "progress" && (
+          <div className="container narrow">
+            {user ? (
+              <ProgressView onSeePlans={() => navigate(PATHS.billing)} />
+            ) : (
+              <>
+                <h1 className="sr-only">{t("navProgress")}</h1>
+                <div className="empty first-use">
+                  <Icon name="lock" size={48} className="empty-icon" />
+                  <h2>{t("signIn")}</h2>
+                  <p>{t("authRequired")}</p>
+                  <button className="btn primary lg" onClick={() => setAuthOpen(true)}>
+                    {t("signIn")}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {view === "billing" && (
           <div className="container narrow">
             <PlansView onSignIn={() => setAuthOpen(true)} />
           </div>
         )}
 
-        {workout && (
+        {view === "workout" && workout && (
           <div className="container narrow">
             <WorkoutLogger
               routine={workout.routine}
               dayIndex={workout.dayIndex}
               onOpenExercise={setSelected}
-              onCancel={() => setWorkout(null)}
+              onCancel={() => {
+                setWorkout(null);
+                navigate(PATHS.routine);
+              }}
               onDone={() => {
                 setWorkout(null);
-                setView("progress");
+                navigate(PATHS.today);
               }}
             />
           </div>

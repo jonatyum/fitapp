@@ -66,8 +66,13 @@ const routineInclude = {
 export function registerRoutines(app: FastifyInstance) {
   const auth = { preHandler: requireAuth };
 
-  // Preview a plan without persisting anything.
-  app.post<{ Body: GenerateBody }>("/routines/generate", auth, async (req, reply) => {
+  /**
+   * Preview a plan without persisting anything. Deliberately public: the
+   * activation path has to reach a finished plan before there is an account,
+   * and the account is asked for when saving. Nothing here reads or writes
+   * user data.
+   */
+  app.post<{ Body: GenerateBody }>("/routines/generate", async (req, reply) => {
     const { goal, level, daysPerWeek, equipment, place } = req.body ?? {};
     if (!isGoal(goal) || !isLevel(level)) {
       return reply.code(400).send({ error: "invalid_goal_or_level" });
@@ -173,7 +178,8 @@ export function registerRoutines(app: FastifyInstance) {
   /**
    * Swap candidates for one slot. Stateless on purpose: the generator preview
    * has no routine id yet, and a saved routine already holds everything this
-   * needs client-side, so both callers share one contract.
+   * needs client-side, so both callers share one contract. Public for the same
+   * reason as /routines/generate: the preview is swappable before signing up.
    */
   app.post<{
     Body: {
@@ -184,7 +190,7 @@ export function registerRoutines(app: FastifyInstance) {
       exclude?: string[];
       limit?: number;
     };
-  }>("/routines/alternatives", auth, async (req, reply) => {
+  }>("/routines/alternatives", async (req, reply) => {
     const b = req.body;
     if (!b?.slot || typeof b.slot !== "string" || !isLevel(b.level)) {
       return reply.code(400).send({ error: "invalid_alternatives" });

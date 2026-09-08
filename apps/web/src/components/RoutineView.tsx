@@ -9,20 +9,18 @@ import {
 } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 import { tGoal, tLevel, tSplit } from "../i18n/plan";
+import { navigate } from "../router";
+import { PATHS } from "../routes";
 import type { Alternative, Exercise, Routine, RoutineSummary } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DayCard, type DayExercise } from "./DayCard";
 import { ExerciseSwap } from "./ExerciseSwap";
-import { RoutineWizard } from "./RoutineWizard";
 import { Icon } from "./ui/Icon";
-import type { Meta } from "../types";
 
 export function RoutineView({
-  meta,
   onStartWorkout,
   onOpenExercise,
 }: {
-  meta: Meta | null;
   onStartWorkout: (routine: Routine, dayIndex: number) => void;
   onOpenExercise: (ex: Exercise) => void;
 }) {
@@ -30,7 +28,6 @@ export function RoutineView({
 
   const [list, setList] = useState<RoutineSummary[] | null>(null);
   const [current, setCurrent] = useState<Routine | null>(null);
-  const [wizard, setWizard] = useState(false);
   const [loading, setLoading] = useState(true);
   /** routine queued for deletion, pending confirmation */
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -88,32 +85,30 @@ export function RoutineView({
     await load();
   };
 
-  if (wizard) {
+  if (loading) {
     return (
-      <RoutineWizard
-        meta={meta}
-        onCancel={() => setWizard(false)}
-        onSaved={async (saved) => {
-          setWizard(false);
-          setCurrent(saved);
-          setList(await apiRoutines());
-        }}
-      />
+      <>
+        <h1 className="sr-only">{t("navPlan")}</h1>
+        <p className="status" role="status">
+          {t("loading")}
+        </p>
+      </>
     );
   }
 
-  if (loading) return <p className="status" role="status">{t("loading")}</p>;
-
   if (!current) {
     return (
-      <div className="empty first-use">
-        <Icon name="calendar" size={48} className="empty-icon" />
-        <h2>{t("noRoutineTitle")}</h2>
-        <p>{t("noRoutineText")}</p>
-        <button className="btn primary lg" onClick={() => setWizard(true)}>
-          {t("newRoutine")}
-        </button>
-      </div>
+      <>
+        <h1 className="sr-only">{t("navPlan")}</h1>
+        <div className="empty first-use">
+          <Icon name="calendar" size={48} className="empty-icon" />
+          <h2>{t("noRoutineTitle")}</h2>
+          <p>{t("noRoutineText")}</p>
+          <button className="btn primary lg" onClick={() => navigate(PATHS.wizard)}>
+            {t("newRoutine")}
+          </button>
+        </div>
+      </>
     );
   }
 
@@ -132,7 +127,7 @@ export function RoutineView({
             {tGoal(current.goal, lang)} · {tLevel(current.level, lang)}
           </p>
         </div>
-        <button className="btn primary" onClick={() => setWizard(true)}>
+        <button className="btn primary" onClick={() => navigate(PATHS.wizard)}>
           <Icon name="plus" size={18} />
           {t("newRoutine")}
         </button>

@@ -19,7 +19,6 @@ export type CatalogKey =
   | "filterAll"
   | "filterSearch"
   | "removeFilter"
-  | "catalogList"
   | "bodyPartFilters"
   | "mapFront"
   | "mapBack"
@@ -46,7 +45,6 @@ export const catalog: Record<Lang, Record<CatalogKey, string>> = {
     filterAll: "All",
     filterSearch: "Search…",
     removeFilter: "Remove filter",
-    catalogList: "Exercises",
     bodyPartFilters: "Filter by body part",
     mapFront: "Front",
     mapBack: "Back",
@@ -72,7 +70,6 @@ export const catalog: Record<Lang, Record<CatalogKey, string>> = {
     filterAll: "Todos",
     filterSearch: "Buscar…",
     removeFilter: "Quitar filtro",
-    catalogList: "Ejercicios",
     bodyPartFilters: "Filtrar por parte del cuerpo",
     mapFront: "Frente",
     mapBack: "Espalda",

@@ -13,6 +13,7 @@ import type {
   Routine,
   RoutineSummary,
   Stats,
+  StatsSummary,
   Subscription,
   User,
   WorkoutSession,
@@ -229,6 +230,9 @@ export const apiDeleteSession = (id: string) =>
   request<void>(`/sessions/${id}`, { method: "DELETE" });
 
 export const apiStats = () => request<Stats>("/stats");
+
+/** Racha y semana en curso; libre, a diferencia de `/stats`. */
+export const apiStatsSummary = () => request<StatsSummary>("/stats/summary");
 
 // Subscriptions
 

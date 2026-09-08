@@ -50,17 +50,40 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
     await load();
   };
 
-  if (loading) return <p className="status" role="status">{t("loading")}</p>;
+  // El h1 acompaña a todos los estados: la vista no puede quedarse sin
+  // encabezado mientras carga, está bloqueada o aún no hay nada registrado.
+  const heading = <h1 className="sr-only">{t("progress")}</h1>;
 
-  if (locked) return <ProOnly onSeePlans={onSeePlans} />;
+  if (loading) {
+    return (
+      <>
+        {heading}
+        <p className="status" role="status">
+          {t("loading")}
+        </p>
+      </>
+    );
+  }
+
+  if (locked) {
+    return (
+      <>
+        {heading}
+        <ProOnly onSeePlans={onSeePlans} />
+      </>
+    );
+  }
 
   if (!stats || stats.totalSessions === 0) {
     return (
-      <div className="empty first-use">
-        <Icon name="chart" size={48} className="empty-icon" />
-        <h2>{t("noSessionsTitle")}</h2>
-        <p>{t("noSessionsText")}</p>
-      </div>
+      <>
+        {heading}
+        <div className="empty first-use">
+          <Icon name="chart" size={48} className="empty-icon" />
+          <h2>{t("noSessionsTitle")}</h2>
+          <p>{t("noSessionsText")}</p>
+        </div>
+      </>
     );
   }
 
@@ -69,7 +92,7 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
 
   return (
     <div className="progress">
-      <h1 className="sr-only">{t("progress")}</h1>
+      {heading}
 
       <div className="stat-grid">
         <div className="stat">

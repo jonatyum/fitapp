@@ -26,12 +26,17 @@ export function FilterBar({
   set,
   total,
   loading,
+  mode,
+  onMode,
 }: {
   meta: Meta | null;
   filters: FilterState;
   set: (patch: Partial<FilterState>) => void;
   total: number;
   loading: boolean;
+  /** el mapa muscular es otro filtro, no otro destino: se conmuta desde aquí */
+  mode: "list" | "body";
+  onMode: (mode: "list" | "body") => void;
 }) {
   const { t, tv } = useI18n();
   const { bodyPart, target, equipment, muscle, tag } = filters;
@@ -40,74 +45,103 @@ export function FilterBar({
   return (
     <div className="filterbar">
       <div className="filterbar-row">
-        <div className="chip-row">
-          {TAGS.map((x) => {
-            const on = tag === x.id;
-            return (
-              <button
-                key={x.id}
-                className="chip"
-                aria-pressed={on}
-                onClick={() => set({ tag: on ? "" : x.id })}
-              >
-                {/* Activo = fondo + borde + check. Nunca solo color. */}
-                <Icon name={on ? "check" : x.icon} size={16} />
-                {t(x.label)}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Región desplazable: alcanzable por teclado y anunciada. */}
-        <div
-          className="pill-scroll"
-          tabIndex={0}
-          role="group"
-          aria-label={t("bodyPartFilters")}
-        >
-          <button
-            className="pill"
-            aria-pressed={!bodyPart}
-            onClick={() => set({ bodyPart: "" })}
-          >
-            {t("filterAll")}
-          </button>
-          {meta?.bodyParts.map((b) => (
+        <div className="filterbar-modes">
+          <div className="viewswitch" role="group" aria-label={t("viewMode")}>
             <button
-              key={b}
-              className="pill"
-              aria-pressed={bodyPart === b}
-              onClick={() => set({ bodyPart: bodyPart === b ? "" : b })}
+              className="switch-opt"
+              aria-pressed={mode === "list"}
+              onClick={() => onMode("list")}
             >
-              {tv(b)}
+              <Icon name="grid" size={16} />
+              {t("viewList")}
             </button>
-          ))}
+            <button
+              className="switch-opt"
+              aria-pressed={mode === "body"}
+              onClick={() => onMode("body")}
+            >
+              <Icon name="body" size={16} />
+              {t("viewBody")}
+            </button>
+          </div>
+
+          <div className="chip-row">
+            {TAGS.map((x) => {
+              const on = tag === x.id;
+              return (
+                <button
+                  key={x.id}
+                  className="chip"
+                  aria-pressed={on}
+                  onClick={() => set({ tag: on ? "" : x.id })}
+                >
+                  {/* Activo = fondo + borde + check. Nunca solo color. */}
+                  <Icon name={on ? "check" : x.icon} size={16} />
+                  {t(x.label)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="filterbar-dropdowns">
-          <FilterDropdown
-            label={t("target")}
-            values={meta?.targets}
-            active={target}
-            onSelect={(v) => set({ target: v })}
-            translate={tv}
-            searchable
-          />
-          <FilterDropdown
-            label={t("equipment")}
-            values={meta?.equipment}
-            active={equipment}
-            onSelect={(v) => set({ equipment: v })}
-            translate={tv}
-            searchable
-          />
-        </div>
+        {/* Sobre el cuerpo, la figura es el selector: las pills y los
+            desplegables sólo tienen sentido sobre la lista. */}
+        {mode === "list" && (
+          <>
+            {/* Región desplazable: alcanzable por teclado y anunciada. */}
+            <div
+              className="pill-scroll"
+              tabIndex={0}
+              role="group"
+              aria-label={t("bodyPartFilters")}
+            >
+              <button
+                className="pill"
+                aria-pressed={!bodyPart}
+                onClick={() => set({ bodyPart: "" })}
+              >
+                {t("filterAll")}
+              </button>
+              {meta?.bodyParts.map((b) => (
+                <button
+                  key={b}
+                  className="pill"
+                  aria-pressed={bodyPart === b}
+                  onClick={() => set({ bodyPart: bodyPart === b ? "" : b })}
+                >
+                  {tv(b)}
+                </button>
+              ))}
+            </div>
+
+            <div className="filterbar-dropdowns">
+              <FilterDropdown
+                label={t("target")}
+                values={meta?.targets}
+                active={target}
+                onSelect={(v) => set({ target: v })}
+                translate={tv}
+                searchable
+              />
+              <FilterDropdown
+                label={t("equipment")}
+                values={meta?.equipment}
+                active={equipment}
+                onSelect={(v) => set({ equipment: v })}
+                translate={tv}
+                searchable
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <div className="filterbar-meta">
-        <span className="count">
-          {loading ? t("loading") : t("results", { n: total.toLocaleString() })}
-        </span>
+        {mode === "list" && (
+          <span className="count">
+            {loading ? t("loading") : t("results", { n: total.toLocaleString() })}
+          </span>
+        )}
 
         {muscle && (
           <span className="chip dismissible capitalize">

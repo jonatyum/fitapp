@@ -12,11 +12,15 @@ export type CommonKey =
   | "back"
   | "next"
   | "errGeneric"
-  | "navCatalog"
-  | "navMap"
-  | "navRoutine"
+  | "navToday"
+  | "navPlan"
+  | "navExercises"
+  | "navMe"
   | "navProgress"
   | "navPlans"
+  | "viewMode"
+  | "viewList"
+  | "viewBody"
   | "appName"
   | "skipToContent"
   | "themeToLight"
@@ -38,11 +42,15 @@ export const common: Record<Lang, Record<CommonKey, string>> = {
     back: "Back",
     next: "Next",
     errGeneric: "Something went wrong. Try again.",
-    navCatalog: "Catalog",
-    navMap: "Muscle map",
-    navRoutine: "Routine",
+    navToday: "Today",
+    navPlan: "Plan",
+    navExercises: "Exercises",
+    navMe: "Me",
     navProgress: "Progress",
     navPlans: "Plans",
+    viewMode: "View",
+    viewList: "List",
+    viewBody: "Body",
 
     appName: "Chamani",
     skipToContent: "Skip to content",
@@ -64,11 +72,15 @@ export const common: Record<Lang, Record<CommonKey, string>> = {
     back: "Atrás",
     next: "Siguiente",
     errGeneric: "Algo salió mal. Inténtalo de nuevo.",
-    navCatalog: "Catálogo",
-    navMap: "Mapa muscular",
-    navRoutine: "Rutina",
+    navToday: "Hoy",
+    navPlan: "Plan",
+    navExercises: "Ejercicios",
+    navMe: "Yo",
     navProgress: "Progreso",
     navPlans: "Planes",
+    viewMode: "Vista",
+    viewList: "Lista",
+    viewBody: "Cuerpo",
 
     appName: "Chamani",
     skipToContent: "Saltar al contenido",

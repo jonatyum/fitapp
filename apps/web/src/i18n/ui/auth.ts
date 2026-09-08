@@ -13,6 +13,8 @@ export type AuthKey =
   | "noAccount"
   | "haveAccount"
   | "authRequired"
+  | "saveProgressTitle"
+  | "saveProgressText"
   | "errInvalidEmail"
   | "errWeakPassword"
   | "errMissingName"
@@ -35,6 +37,8 @@ export const auth: Record<Lang, Record<AuthKey, string>> = {
     createAccount: "Create your account",
     noAccount: "No account yet?",
     haveAccount: "Already have an account?",
+    saveProgressTitle: "Keep your progress",
+    saveProgressText: "Create an account to save your plans and your workout history.",
     authRequired: "Sign in to build routines and log your workouts.",
     errInvalidEmail: "That email doesn't look valid",
     errWeakPassword: "Password must be at least 8 characters",
@@ -57,6 +61,8 @@ export const auth: Record<Lang, Record<AuthKey, string>> = {
     createAccount: "Crea tu cuenta",
     noAccount: "¿Aún no tienes cuenta?",
     haveAccount: "¿Ya tienes cuenta?",
+    saveProgressTitle: "Guarda tu progreso",
+    saveProgressText: "Crea una cuenta para guardar tus planes y tu historial de entrenamientos.",
     authRequired: "Inicia sesión para crear rutinas y registrar tus entrenamientos.",
     errInvalidEmail: "Ese correo no parece válido",
     errWeakPassword: "La contraseña debe tener al menos 8 caracteres",
