@@ -7,17 +7,17 @@
 
 /* ══ Escala cruda ═══════════════════════════════════════════════════════ */
 :root {
-  /* Marca — fucsia andino (aguayo) */
-  --brand-50:  #FDF0F5;
-  --brand-100: #FADCE8;
-  --brand-200: #F4B6CE;
-  --brand-300: #EE8FB0;
-  --brand-400: #E04B84;
-  --brand-500: #C2185B;
-  --brand-600: #A80F4C;
-  --brand-700: #870C3A;
-  --brand-800: #66092C;
-  --brand-900: #47061F;
+  /* Marca — petróleo andino */
+  --brand-50:  #EAF3F4;
+  --brand-100: #CFE3E6;
+  --brand-200: #A3C8CE;
+  --brand-300: #6FA8B2;
+  --brand-400: #2E7C8A;
+  --brand-500: #1A5F6E;
+  --brand-600: #134E5B;
+  --brand-700: #0E3D48;
+  --brand-800: #0A2C34;
+  --brand-900: #061D22;
 
   /* Oro altiplano — racha, logro. Relleno y badges; nunca texto sobre claro. */
   --gold-100: #FDF1E0;
@@ -104,7 +104,7 @@
   --shadow-sm: 0 1px 2px rgba(44, 40, 34, 0.05), 0 2px 6px rgba(44, 40, 34, 0.06);
   --shadow-md: 0 2px 4px rgba(44, 40, 34, 0.05), 0 8px 20px rgba(44, 40, 34, 0.08);
   --shadow-lg: 0 8px 16px rgba(44, 40, 34, 0.08), 0 24px 56px rgba(44, 40, 34, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(194, 24, 91, 0.28);
+  --shadow-focus: 0 0 0 3px rgba(26, 95, 110, 0.28);
 
   --focus-ring:        var(--brand-500);
   --focus-ring-offset: var(--surface);
@@ -156,12 +156,12 @@
   --text-on-danger:   var(--white);
   --text-inverse:     var(--ink-950);
 
-  --brand:             #D01B63;
-  --brand-hover:       #B41254;
-  --brand-active:      #950E44;
+  --brand:             #1E7284;
+  --brand-hover:       #175D6C;
+  --brand-active:      #114A57;
   --brand-text:        var(--brand-300);
-  --brand-soft:        #2E1119;
-  --brand-soft-border: #4A1A2A;
+  --brand-soft:        #0B2429;
+  --brand-soft-border: #143B44;
 
   --accent:      var(--gold-300);
   --accent-soft: #2A2013;
@@ -178,7 +178,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.6);
-  --shadow-focus: 0 0 0 3px rgba(238, 143, 176, 0.32);
+  --shadow-focus: 0 0 0 3px rgba(111, 168, 178, 0.32);
 
   --focus-ring:        var(--brand-300);
   --focus-ring-offset: var(--surface);

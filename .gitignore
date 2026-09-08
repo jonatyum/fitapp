@@ -3,3 +3,6 @@ dist/
 .env
 .DS_Store
 *.log
+
+# Contexto local de Claude Code, no se comparte
+CLAUDE.md
