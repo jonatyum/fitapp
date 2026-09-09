@@ -6,6 +6,14 @@ export type BillingKey =
   | "planFreeName"
   | "planProName"
   | "planPerMonth"
+  | "planPerQuarter"
+  | "planPerYear"
+  | "planBillingPeriod"
+  | "planPeriodMonth"
+  | "planPeriodQuarter"
+  | "planPeriodYear"
+  | "planPerMonthEq"
+  | "planSave"
   | "planCurrent"
   | "planChoose"
   | "planFreeF1"
@@ -31,6 +39,18 @@ export type BillingKey =
   | "payContact"
   | "payPending"
   | "payPendingHint"
+  | "payDeclareCta"
+  | "payDeclareTitle"
+  | "payDeclareLead"
+  | "payOperation"
+  | "payOperationHint"
+  | "payPaidOn"
+  | "payBankOptional"
+  | "payDeclareSend"
+  | "payReview"
+  | "payReviewHint"
+  | "errOperation"
+  | "errDeclare"
   | "payCopy"
   | "payCopied"
   | "payClose"
@@ -38,7 +58,14 @@ export type BillingKey =
   | "payError"
   | "proOnlyTitle"
   | "proOnlyText"
-  | "proSeePlans";
+  | "proSeePlans"
+  | "paywallLater"
+  | "paywallSessionsTitle"
+  | "paywallSessionsText"
+  | "paywallPlansTitle"
+  | "paywallPlansText"
+  | "paywallStreakTitle"
+  | "paywallStreakText";
 
 export const billing: Record<Lang, Record<BillingKey, string>> = {
   en: {
@@ -47,6 +74,14 @@ export const billing: Record<Lang, Record<BillingKey, string>> = {
     planFreeName: "Free",
     planProName: "Pro",
     planPerMonth: "/month",
+    planPerQuarter: "/quarter",
+    planPerYear: "/year",
+    planBillingPeriod: "Billing period",
+    planPeriodMonth: "Monthly",
+    planPeriodQuarter: "Quarterly",
+    planPeriodYear: "Yearly",
+    planPerMonthEq: "Works out at {amount}/month",
+    planSave: "Save {n}%",
     planCurrent: "Current plan",
     planChoose: "Go Pro",
     planFreeF1: "Full exercise library and muscle map",
@@ -63,15 +98,28 @@ export const billing: Record<Lang, Record<BillingKey, string>> = {
     payTitle: "Pay by QR or transfer",
     payStep1: "1. Transfer {amount} to the account below.",
     payStep2: "2. Put the reference {ref} in the transfer note.",
-    payStep3: "3. Send the receipt to {contact}. We activate Pro within 24 h.",
+    payStep3: "3. Come back here and tap \"I already transferred\".",
     payBank: "Bank",
     payAccountName: "Account holder",
     payAccountNumber: "Account",
     payReference: "Reference",
     payAmount: "Amount",
-    payContact: "Send the receipt to",
+    payContact: "Questions? Write to us",
     payPending: "Payment pending",
-    payPendingHint: "Reference {ref} — we are checking your transfer.",
+    payPendingHint: "Reference {ref} — transfer it and then tell us here.",
+    payDeclareCta: "I already transferred",
+    payDeclareTitle: "Confirm your transfer",
+    payDeclareLead:
+      "Give us the operation number your bank showed you. We check it against the account and turn Pro on.",
+    payOperation: "Operation number",
+    payOperationHint: "It is on the receipt your banking app gave you.",
+    payPaidOn: "Date of the transfer",
+    payBankOptional: "Bank (optional)",
+    payDeclareSend: "Send receipt",
+    payReview: "Receipt received",
+    payReviewHint: "Operation {op}. We turn Pro on within 24 h.",
+    errOperation: "Enter the operation number.",
+    errDeclare: "We could not record your receipt. Check the number and try again.",
     payCopy: "Copy",
     payCopied: "Copied",
     payClose: "Done",
@@ -80,6 +128,16 @@ export const billing: Record<Lang, Record<BillingKey, string>> = {
     proOnlyTitle: "This is a Pro feature",
     proOnlyText: "The progress dashboard is part of the Pro plan. Your workouts keep being logged either way.",
     proSeePlans: "See plans",
+    paywallLater: "Not now",
+    paywallSessionsTitle: "Three workouts in. Want to see the shape of it?",
+    paywallSessionsText:
+      "Pro turns what you log into weekly volume, records and estimated 1RM. Your workouts keep being logged either way.",
+    paywallPlansTitle: "Two plans already",
+    paywallPlansText:
+      "Pro shows you how each one is going: volume per week, records and estimated 1RM. What you log stays yours either way.",
+    paywallStreakTitle: "Two weeks without missing one",
+    paywallStreakText:
+      "That is the hard part, and it is yours. Pro shows you what those weeks added up to.",
   },
   es: {
     plansTitle: "Planes",
@@ -87,6 +145,14 @@ export const billing: Record<Lang, Record<BillingKey, string>> = {
     planFreeName: "Free",
     planProName: "Pro",
     planPerMonth: "/mes",
+    planPerQuarter: "/trimestre",
+    planPerYear: "/año",
+    planBillingPeriod: "Periodo de pago",
+    planPeriodMonth: "Mensual",
+    planPeriodQuarter: "Trimestral",
+    planPeriodYear: "Anual",
+    planPerMonthEq: "Sale a {amount}/mes",
+    planSave: "Ahorras {n}%",
     planCurrent: "Plan actual",
     planChoose: "Pasar a Pro",
     planFreeF1: "Catálogo completo de ejercicios y mapa muscular",
@@ -103,15 +169,28 @@ export const billing: Record<Lang, Record<BillingKey, string>> = {
     payTitle: "Paga con QR Simple o transferencia",
     payStep1: "1. Transfiere {amount} a la cuenta de abajo.",
     payStep2: "2. Pon la referencia {ref} en el detalle de la transferencia.",
-    payStep3: "3. Envía el comprobante a {contact}. Activamos Pro en menos de 24 h.",
+    payStep3: "3. Vuelve aquí y pulsa «Ya transferí».",
     payBank: "Banco",
     payAccountName: "Titular",
     payAccountNumber: "Cuenta",
     payReference: "Referencia",
     payAmount: "Monto",
-    payContact: "Envía el comprobante a",
+    payContact: "¿Dudas? Escríbenos a",
     payPending: "Pago pendiente",
-    payPendingHint: "Referencia {ref} — estamos verificando tu transferencia.",
+    payPendingHint: "Referencia {ref} — transfiere y luego avísanos aquí.",
+    payDeclareCta: "Ya transferí",
+    payDeclareTitle: "Confirma tu transferencia",
+    payDeclareLead:
+      "Pon el número de operación que te dio tu banco. Lo verificamos contra la cuenta y activamos Pro.",
+    payOperation: "Nº de operación",
+    payOperationHint: "Está en el comprobante que te dio la app de tu banco.",
+    payPaidOn: "Fecha de la transferencia",
+    payBankOptional: "Banco (opcional)",
+    payDeclareSend: "Enviar comprobante",
+    payReview: "Comprobante recibido",
+    payReviewHint: "Operación {op}. Activamos Pro en menos de 24 h.",
+    errOperation: "Escribe el número de operación.",
+    errDeclare: "No pudimos registrar tu comprobante. Revisa el número e inténtalo de nuevo.",
     payCopy: "Copiar",
     payCopied: "Copiado",
     payClose: "Listo",
@@ -120,5 +199,15 @@ export const billing: Record<Lang, Record<BillingKey, string>> = {
     proOnlyTitle: "Esta función es de Pro",
     proOnlyText: "El panel de progreso es parte del plan Pro. Tus entrenamientos se siguen registrando igual.",
     proSeePlans: "Ver planes",
+    paywallLater: "Ahora no",
+    paywallSessionsTitle: "Van tres entrenamientos. ¿Quieres ver la forma que tienen?",
+    paywallSessionsText:
+      "Pro convierte lo que registras en volumen semanal, récords y 1RM estimado. Tus entrenamientos se siguen guardando igual.",
+    paywallPlansTitle: "Ya llevas dos planes",
+    paywallPlansText:
+      "Pro te enseña cómo va cada uno: volumen por semana, récords y 1RM estimado. Lo que registras sigue siendo tuyo, con Pro o sin él.",
+    paywallStreakTitle: "Dos semanas sin fallar",
+    paywallStreakText:
+      "Esa es la parte difícil, y es tuya. Pro te enseña en qué se han convertido esas semanas.",
   },
 };

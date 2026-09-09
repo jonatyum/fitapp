@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "./db.js";
 import { requireAuth, userId } from "./auth.js";
-import { requirePro } from "./billing/subscriptions.js";
+import { entitlementFor, requirePro } from "./billing/subscriptions.js";
 
 interface SetInput {
   exerciseId: string;
@@ -152,7 +152,8 @@ export function registerSessions(app: FastifyInstance) {
     const uid = userId(req);
     const thisWeek = weekStart(new Date());
 
-    const [dates, week] = await Promise.all([
+    const [entitlement, dates, week] = await Promise.all([
+      entitlementFor(uid),
       prisma.workoutSession.findMany({
         where: { userId: uid, finishedAt: { not: null } },
         orderBy: { startedAt: "desc" },
@@ -176,6 +177,9 @@ export function registerSessions(app: FastifyInstance) {
     }
 
     return {
+      // El paywall contextual vive en la home y necesita saber a quién no
+      // molestar; traerlo aquí ahorra una vuelta entera al servidor.
+      isPro: entitlement.isPro,
       totalSessions: dates.length,
       sessionsThisWeek: week.length,
       weekVolume: week.reduce((v, s) => v + volumeOf(s.sets), 0),

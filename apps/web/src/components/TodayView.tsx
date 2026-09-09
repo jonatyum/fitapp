@@ -3,8 +3,10 @@ import { apiRoutine, apiRoutines, apiSessions, apiStatsSummary } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import { tDayLabel } from "../i18n/plan";
+import { pendingTrigger, type PaywallTrigger } from "../paywall";
 import { navigate } from "../router";
 import { PATHS } from "../routes";
+import { PaywallDialog } from "./PaywallDialog";
 import type { Routine, RoutineDay, StatsSummary, WorkoutSession } from "../types";
 import { Icon } from "./ui/Icon";
 
@@ -53,6 +55,8 @@ export function TodayView({
   const [summary, setSummary] = useState<StatsSummary | null>(null);
   const [dayIndex, setDayIndex] = useState(0);
   const [doneToday, setDoneToday] = useState(false);
+  /** momento de oferta de Pro que toca ahora, si toca alguno */
+  const [paywall, setPaywall] = useState<PaywallTrigger | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
@@ -79,6 +83,7 @@ export function TodayView({
       setSummary(stats);
       setDayIndex(full ? nextDayIndex(full, sessions) : 0);
       setDoneToday(sessions.some((s) => isToday(s.startedAt)));
+      setPaywall(pendingTrigger({ summary: stats, routines: list.length }));
     })()
       .catch(() => {
         if (alive) setFailed(true);
@@ -202,6 +207,8 @@ export function TodayView({
           </button>
         </>
       )}
+
+      {paywall && <PaywallDialog trigger={paywall} onClose={() => setPaywall(null)} />}
     </div>
   );
 }

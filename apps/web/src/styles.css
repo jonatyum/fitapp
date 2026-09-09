@@ -2297,6 +2297,10 @@ h1, h2, h3, h4 { text-wrap: balance; }
   text-transform: uppercase;
 }
 
+/* ── Paywall contextual ────────────────────────────────────────────────── */
+.paywall { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+.paywall p { color: var(--text-2); font-size: var(--text-md); }
+
 /* ── Planes y pago ─────────────────────────────────────────────────────── */
 .plans { display: flex; flex-direction: column; gap: var(--space-4); }
 .plans-head { display: flex; flex-direction: column; gap: var(--space-2); text-align: center; }
@@ -2322,10 +2326,22 @@ h1, h2, h3, h4 { text-wrap: balance; }
 }
 .sub-banner.active { border-color: var(--brand); background: var(--brand-soft); }
 
+/* Acciones dentro del aviso de pago pendiente: bajan a su propia línea en
+   móvil, donde el texto ya ocupa el ancho entero. */
+.sub-banner-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-left: auto; }
+
+/* El conmutador de plazo ocupa el ancho: es la primera decisión de la pantalla. */
+.plan-periods { align-self: stretch; }
+.plan-periods .switch-opt { flex: 1; justify-content: center; }
+
 .plan-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
 .plan-card { display: flex; flex-direction: column; gap: var(--space-3); }
 .plan-card.featured { border-color: var(--brand); }
 .plan-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   text-transform: uppercase;
