@@ -56,6 +56,10 @@ model User {
   googleId     String?  @unique @map("google_id")
   avatarUrl    String?  @map("avatar_url")
   name         String
+  /// client | admin. Se comprueba leyendo esta columna en cada petición, nunca
+  /// desde el JWT: con tokens de 30 días y sin revocación, degradar a un admin
+  /// le dejaría el rol hasta que caducara el suyo.
+  role         String   @default("client")
   createdAt    DateTime @default(now()) @map("created_at")
 
   routines     Routine[]
@@ -80,6 +84,9 @@ model Routine {
   split       String
   /// equipment the user said they have (empty = everything)
   equipment   String[]
+  /// "home" | "gym": dónde se entrena el plan. El generador lo decide y hasta
+  /// ahora se perdía al guardar, que es lo que obligaba a deducirlo del equipo.
+  place       String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -213,7 +220,10 @@ model Subscription {
 /// One payment attempt. Append-only: rows are transitioned, never deleted.
 model Payment {
   id          String    @id @default(cuid())
-  userId      String    @map("user_id")
+  /// null cuando la cuenta se borró: el pago es un registro contable y no
+  /// puede desaparecer con ella, así que la relación se anula en vez de
+  /// arrastrarlo (el borrado de cuenta anonimiza, no destruye).
+  userId      String?   @map("user_id")
   planCode    String    @map("plan_code")
   /// "manual-qr" | "polar"
   provider    String
@@ -235,8 +245,8 @@ model Payment {
   /// Email of the admin who confirmed a manual payment (audit trail).
   confirmedBy String?   @map("confirmed_by")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan Plan @relation(fields: [planCode], references: [code])
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  plan Plan  @relation(fields: [planCode], references: [code])
 
   @@index([userId, createdAt])
   @@index([status, createdAt])

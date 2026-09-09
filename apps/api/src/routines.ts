@@ -43,6 +43,8 @@ interface SaveBody {
   daysPerWeek: number;
   split: string;
   equipment?: string[];
+  /** "home" | "gym"; hasta ahora se enviaba y se tiraba. */
+  place?: string;
   days: SaveDay[];
 }
 
@@ -127,6 +129,7 @@ export function registerRoutines(app: FastifyInstance) {
         daysPerWeek: body.daysPerWeek,
         split: body.split,
         equipment: body.equipment ?? [],
+        place: isPlace(body.place) ? body.place : null,
         days: {
           create: body.days.map((d, i) => ({
             position: i,
