@@ -17,11 +17,13 @@ const ERROR_KEY: Record<string, UIKey> = {
   bad_google_token: "errGoogle",
   google_email_unverified: "errGoogleUnverified",
   google_not_configured: "errGoogle",
+  email_not_allowed: "errNotAllowed",
+  password_login_disabled: "errPasswordDisabled",
 };
 
 export function AuthModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
-  const { login, register, loginWithGoogle, googleClientId } = useAuth();
+  const { login, register, loginWithGoogle, googleClientId, passwordAuth } = useAuth();
   const id = useId();
 
   const [mode, setMode] = useState<"in" | "up">("in");
@@ -82,69 +84,75 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
               onCredential={onCredential}
               onError={onGoogleError}
             />
-            <div className="or-divider">
-              <span>{t("orDivider")}</span>
-            </div>
+            {passwordAuth && (
+              <div className="or-divider">
+                <span>{t("orDivider")}</span>
+              </div>
+            )}
           </>
         )}
 
-        {mode === "up" && (
-          <div className="field">
-            <label className="field-label" htmlFor={`${id}-name`}>
-              {t("nameLabel")}
-            </label>
-            <input
-              id={`${id}-name`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-              aria-invalid={invalid}
-              aria-describedby={error ? `${id}-err` : undefined}
-              required
-            />
-          </div>
+        {passwordAuth && (
+          <>
+            {mode === "up" && (
+              <div className="field">
+                <label className="field-label" htmlFor={`${id}-name`}>
+                  {t("nameLabel")}
+                </label>
+                <input
+                  id={`${id}-name`}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  aria-invalid={invalid}
+                  aria-describedby={error ? `${id}-err` : undefined}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="field">
+              <label className="field-label" htmlFor={`${id}-email`}>
+                {t("emailLabel")}
+              </label>
+              <input
+                id={`${id}-email`}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                aria-invalid={invalid}
+                aria-describedby={error ? `${id}-err` : undefined}
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor={`${id}-password`}>
+                {t("passwordLabel")}
+              </label>
+              <input
+                id={`${id}-password`}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === "in" ? "current-password" : "new-password"}
+                aria-invalid={invalid}
+                aria-describedby={
+                  [mode === "up" ? `${id}-hint` : null, error ? `${id}-err` : null]
+                    .filter(Boolean)
+                    .join(" ") || undefined
+                }
+                required
+              />
+              {mode === "up" && (
+                <p className="field-help" id={`${id}-hint`}>
+                  {t("passwordHint")}
+                </p>
+              )}
+            </div>
+          </>
         )}
-
-        <div className="field">
-          <label className="field-label" htmlFor={`${id}-email`}>
-            {t("emailLabel")}
-          </label>
-          <input
-            id={`${id}-email`}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            aria-invalid={invalid}
-            aria-describedby={error ? `${id}-err` : undefined}
-            required
-          />
-        </div>
-
-        <div className="field">
-          <label className="field-label" htmlFor={`${id}-password`}>
-            {t("passwordLabel")}
-          </label>
-          <input
-            id={`${id}-password`}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={mode === "in" ? "current-password" : "new-password"}
-            aria-invalid={invalid}
-            aria-describedby={
-              [mode === "up" ? `${id}-hint` : null, error ? `${id}-err` : null]
-                .filter(Boolean)
-                .join(" ") || undefined
-            }
-            required
-          />
-          {mode === "up" && (
-            <p className="field-help" id={`${id}-hint`}>
-              {t("passwordHint")}
-            </p>
-          )}
-        </div>
 
         {/* Nunca solo color: el error lleva icono y se anuncia. */}
         {error && (
@@ -154,24 +162,28 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
           </p>
         )}
 
-        <button className={`btn primary lg block${busy ? " loading" : ""}`} disabled={busy}>
-          {busy && <span className="btn-spinner" aria-hidden="true" />}
-          <span>{mode === "in" ? t("signIn") : t("signUp")}</span>
-        </button>
+        {passwordAuth && (
+          <>
+            <button className={`btn primary lg block${busy ? " loading" : ""}`} disabled={busy}>
+              {busy && <span className="btn-spinner" aria-hidden="true" />}
+              <span>{mode === "in" ? t("signIn") : t("signUp")}</span>
+            </button>
 
-        <p className="auth-switch">
-          {mode === "in" ? t("noAccount") : t("haveAccount")}{" "}
-          <button
-            type="button"
-            className="linkish"
-            onClick={() => {
-              setMode(mode === "in" ? "up" : "in");
-              setError(null);
-            }}
-          >
-            {mode === "in" ? t("signUp") : t("signIn")}
-          </button>
-        </p>
+            <p className="auth-switch">
+              {mode === "in" ? t("noAccount") : t("haveAccount")}{" "}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => {
+                  setMode(mode === "in" ? "up" : "in");
+                  setError(null);
+                }}
+              >
+                {mode === "in" ? t("signUp") : t("signIn")}
+              </button>
+            </p>
+          </>
+        )}
       </form>
     </Dialog>
   );

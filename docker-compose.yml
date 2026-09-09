@@ -51,6 +51,8 @@ services:
       # .env.example). Without QR_ACCOUNT_NUMBER + QR_CONTACT the provider stays
       # disabled and the plans screen shows no way to pay.
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      CLOSED_BETA: ${CLOSED_BETA:-}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
       PAYMENT_PENDING_HOURS: ${PAYMENT_PENDING_HOURS:-}
       QR_BANK_NAME: ${QR_BANK_NAME:-}
       QR_ACCOUNT_NAME: ${QR_ACCOUNT_NAME:-}
@@ -78,6 +80,8 @@ services:
       - api
     environment:
       VITE_API_URL: http://localhost:3001
+      # Sin número no se pinta el botón de "pedir invitación", solo el texto.
+      VITE_INVITE_WHATSAPP: ${VITE_INVITE_WHATSAPP:-}
     ports:
       - "5174:5173"
     volumes:

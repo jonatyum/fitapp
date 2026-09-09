@@ -40,30 +40,31 @@ export interface ExerciseFilters {
   offset?: number;
 }
 
+/**
+ * El catálogo va por `request` como todo lo demás: dejó de ser público al
+ * cerrar la beta, y con `fetch` pelado se quedaría sin la cabecera del token.
+ */
 export async function fetchExercises(filters: ExerciseFilters): Promise<ExerciseList> {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(filters)) {
     if (v !== undefined && v !== "") params.set(k, String(v));
   }
-  const res = await fetch(`${API_URL}/exercises?${params.toString()}`);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return request<ExerciseList>(`/exercises?${params.toString()}`);
 }
 
-export async function fetchMeta(): Promise<Meta> {
-  const res = await fetch(`${API_URL}/meta`);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
-}
+export const fetchMeta = () => request<Meta>("/meta");
 
 /** Exercise count per muscle (target + secondary), for the muscle map. */
-export async function fetchMuscleCounts(): Promise<Record<string, number>> {
-  const res = await fetch(`${API_URL}/muscles/counts`);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
-}
+export const fetchMuscleCounts = () => request<Record<string, number>>("/muscles/counts");
 
 export type { Exercise };
+
+/** Cómo se entra en este despliegue, y si la beta está cerrada. */
+export interface AuthConfig {
+  googleClientId: string | null;
+  closedBeta: boolean;
+  passwordAuth: boolean;
+}
 
 // ── Authenticated calls ────────────────────────────────────────────────────
 
@@ -132,8 +133,7 @@ export const apiDeleteAccount = (body: { password?: string; confirm?: string }) 
   request<void>("/auth/account", { method: "DELETE", body: JSON.stringify(body) });
 
 /** Which sign-in methods this deployment offers. */
-export const apiAuthConfig = () =>
-  request<{ googleClientId: string | null }>("/auth/config");
+export const apiAuthConfig = () => request<AuthConfig>("/auth/config");
 
 /** Exchange a Google Identity Services ID token for a FitApp session. */
 export const apiGoogleLogin = (credential: string) =>
