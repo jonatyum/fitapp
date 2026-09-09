@@ -472,13 +472,6 @@ h1, h2, h3, h4 { text-wrap: balance; }
 }
 .btn > svg { flex: 0 0 auto; }
 
-.btn:disabled,
-.btn[aria-disabled="true"] {
-  background: var(--surface-3);
-  color: var(--text-disabled);
-  border-color: var(--border);
-  cursor: not-allowed;
-}
 .btn:not(:disabled):active { transform: scale(0.98); }
 
 .btn.primary { background: var(--brand); color: var(--text-on-brand); }
@@ -508,6 +501,17 @@ h1, h2, h3, h4 { text-wrap: balance; }
   background: var(--brand-soft);
   color: var(--brand-text);
   border-color: var(--brand-soft-border);
+}
+
+/* Después de las variantes a propósito: `.btn.primary` y `.btn:disabled` tienen
+   la misma especificidad, así que declarado antes perdía y un botón inutilizado
+   seguía pintándose como pulsable. */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--surface-3);
+  color: var(--text-disabled);
+  border-color: var(--border);
+  cursor: not-allowed;
 }
 
 @media (hover: hover) {
