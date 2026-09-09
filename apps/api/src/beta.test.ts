@@ -123,6 +123,16 @@ describe("closed beta", () => {
     }
   });
 
+  it("defers to the Google Cloud list when no allow-list is configured", async () => {
+    // El default: ALLOWED_EMAILS vacía deja pasar a quien Google haya dejado
+    // llegar hasta aquí, que en modo Testing son sólo sus verificadores.
+    const saved = process.env.ALLOWED_EMAILS;
+    process.env.ALLOWED_EMAILS = "";
+    const fresh = await import(`./beta.js?empty=${Date.now()}`);
+    assert.equal(fresh.isAllowedEmail("cualquiera@ejemplo.bo"), true);
+    process.env.ALLOWED_EMAILS = saved;
+  });
+
   it("tells the client the beta is on and the password form is not", async () => {
     const app = await buildApp();
     const res = await app.inject({ method: "GET", url: "/auth/config" });

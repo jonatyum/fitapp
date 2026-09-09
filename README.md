@@ -87,15 +87,18 @@ Detalles de comportamiento:
 
 ## Beta cerrada
 
-Con `CLOSED_BETA=1` la app entera queda detrás de una sesión de Google y solo
-entran los correos de `ALLOWED_EMAILS`. Se cierra todo salvo `/health`,
+Con `CLOSED_BETA=1` la app entera queda detrás de una sesión de Google. Quién
+entra lo decide la lista de *usuarios de prueba* de Google Cloud, con la
+pantalla de consentimiento en *Testing*. Se cierra todo salvo `/health`,
 `/auth/config`, `/auth/google`, el webhook de cobro y `/media/*` — este último
 porque un `<img src>` no manda cabecera de autorización y el catálogo se
 quedaría sin imágenes.
 
-La lista de *usuarios de prueba* de Google Cloud no basta como autorización:
-publicar la pantalla de consentimiento es un botón de una consola y abriría el
-registro a cualquier cuenta de Google. Por eso la puerta es `ALLOWED_EMAILS`, y
+`ALLOWED_EMAILS` es una segunda puerta **opcional**, vacía por defecto para no
+tener dos listas que mantener. Rellenarla añade un cerrojo que Google no puede
+abrir por su cuenta, y conviene saber por qué existe: publicar la pantalla de
+consentimiento es un botón de una consola, sin PR ni revisión, y abriría el
+registro a cualquier cuenta de Google en el mismo segundo. Cuando está puesta
 se comprueba en cada entrada, no solo al crear la cuenta.
 
 Mientras dura, el correo y la contraseña quedan desactivados (`403
