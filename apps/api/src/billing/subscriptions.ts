@@ -36,8 +36,12 @@ const FREE_ENTITLEMENT: Entitlement = {
  * there is nothing to run a scheduler, and a stale `status` column would be a
  * silent way to hand out Pro for free.
  */
-export async function entitlementFor(uid: string): Promise<Entitlement> {
-  const sub = await prisma.subscription.findUnique({ where: { userId: uid } });
+export function entitlementOf(sub: {
+  planCode: string;
+  status: string;
+  startedAt: Date;
+  expiresAt: Date | null;
+} | null): Entitlement {
   if (!sub) return FREE_ENTITLEMENT;
 
   const expired = sub.expiresAt !== null && sub.expiresAt.getTime() <= Date.now();
@@ -50,6 +54,10 @@ export async function entitlementFor(uid: string): Promise<Entitlement> {
     startedAt: sub.startedAt.toISOString(),
     expiresAt: sub.expiresAt?.toISOString() ?? null,
   };
+}
+
+export async function entitlementFor(uid: string): Promise<Entitlement> {
+  return entitlementOf(await prisma.subscription.findUnique({ where: { userId: uid } }));
 }
 
 /**
@@ -75,6 +83,10 @@ export async function activateFromPayment(
     if (count === 0) return { activated: false };
 
     const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    // La cuenta se borró después de pagar: el pago queda como registro
+    // contable, pero no hay a quién darle el periodo.
+    if (!payment.userId) return { activated: false };
+
     const plan = planByCode(payment.planCode);
     if (!plan) throw new Error(`unknown plan on payment ${payment.reference}`);
 
