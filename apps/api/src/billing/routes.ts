@@ -362,12 +362,12 @@ export async function registerBilling(app: FastifyInstance) {
         where: { id: userId(req) },
         select: { email: true },
       });
-      const { activated } = await activateFromPayment(payment.id, { confirmedBy: me.email });
-      if (!activated) return reply.code(409).send({ error: "not_pending" });
+      const activation = await activateFromPayment(payment.id, { confirmedBy: me.email });
+      if (!activation.activated) return reply.code(409).send({ error: "not_pending" });
 
       const [fresh, entitlement] = await Promise.all([
         prisma.payment.findUniqueOrThrow({ where: { id: payment.id } }),
-        entitlementFor(payment.userId),
+        entitlementFor(activation.userId),
       ]);
       return { payment: publicPayment(fresh), subscription: entitlement };
     },

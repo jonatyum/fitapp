@@ -5,6 +5,8 @@ name: Deploy web to GitHub Pages
 #   - Settings → Pages → Source = "GitHub Actions"
 #   - Settings → Secrets and variables → Actions → Variables:
 #       VITE_API_URL = https://<your-render-service>.onrender.com
+#   - Settings → Pages → Custom domain = chamani.jonatyum.com, with a
+#     CNAME chamani → jonatyum.github.io in Cloudflare (DNS only).
 on:
   push:
     branches: [main]
@@ -37,8 +39,8 @@ jobs:
       - run: npm run build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-          # Serves assets from /<repo>/ to match the Pages URL.
-          VITE_BASE: /${{ github.event.repository.name }}/
+          # No VITE_BASE: on the custom domain the app is served from the root,
+          # so vite.config's default of "/" is the right one.
       # Pages has no SPA fallback: without this, reloading /routine 404s.
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

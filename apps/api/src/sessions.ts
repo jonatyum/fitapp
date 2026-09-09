@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db.js";
 import { requireAuth, userId } from "./auth.js";
 import { entitlementFor, requirePro } from "./billing/subscriptions.js";
@@ -31,7 +32,7 @@ const sessionInclude = {
   sets: { orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }] },
   day: { select: { id: true, label: true, position: true } },
   routine: { select: { id: true, name: true } },
-} as const;
+} satisfies Prisma.WorkoutSessionInclude;
 
 const volumeOf = (sets: { reps: number; weight: number }[]) =>
   sets.reduce((v, s) => v + s.reps * s.weight, 0);
