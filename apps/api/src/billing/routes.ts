@@ -38,6 +38,29 @@ async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
   }
 }
 
+/** What the payer says they did. The admin still checks it against the bank. */
+interface Declaration {
+  operation: string;
+  paidOn: string | null;
+  bank: string | null;
+  declaredAt: string;
+}
+
+const declarationOf = (metadata: unknown): Declaration | null => {
+  const d = (metadata as { declaration?: Declaration } | null)?.declaration;
+  return d && typeof d.operation === "string" ? d : null;
+};
+
+/**
+ * A payment nobody has settled yet. A declared transfer has no deadline: the
+ * payer did their part and the queue is ours now, so it must not go stale
+ * under them.
+ */
+const claimable = () => ({
+  status: { in: ["pending", "review"] },
+  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+});
+
 /** Rows are internal; this is what the web app is allowed to see. */
 const publicPayment = (p: {
   reference: string;
@@ -46,6 +69,7 @@ const publicPayment = (p: {
   status: string;
   amountCents: number;
   currency: string;
+  metadata: unknown;
   createdAt: Date;
   expiresAt: Date | null;
   paidAt: Date | null;
@@ -57,6 +81,7 @@ const publicPayment = (p: {
   amountCents: p.amountCents,
   currency: p.currency,
   amountLabel: formatAmount(p.amountCents, p.currency),
+  declaration: declarationOf(p.metadata),
   createdAt: p.createdAt.toISOString(),
   expiresAt: p.expiresAt?.toISOString() ?? null,
   paidAt: p.paidAt?.toISOString() ?? null,
@@ -80,7 +105,7 @@ export async function registerBilling(app: FastifyInstance) {
     const [entitlement, pending] = await Promise.all([
       entitlementFor(uid),
       prisma.payment.findFirst({
-        where: { userId: uid, status: "pending", expiresAt: { gt: new Date() } },
+        where: { userId: uid, ...claimable() },
         orderBy: { createdAt: "desc" },
       }),
     ]);
@@ -115,13 +140,7 @@ export async function registerBilling(app: FastifyInstance) {
       if (!user) return reply.code(401).send({ error: "unauthorized" });
 
       const existing = await prisma.payment.findFirst({
-        where: {
-          userId: uid,
-          planCode: plan.code,
-          provider: provider.id,
-          status: "pending",
-          expiresAt: { gt: new Date() },
-        },
+        where: { userId: uid, planCode: plan.code, provider: provider.id, ...claimable() },
         orderBy: { createdAt: "desc" },
       });
 
@@ -209,6 +228,61 @@ export async function registerBilling(app: FastifyInstance) {
     },
   );
 
+  /**
+   * "I already transferred". Stores the operation number the bank gave the
+   * payer and moves the row to `review`.
+   *
+   * It deliberately does not mark anything paid: proof of payment is the bank
+   * statement, not a number typed into a form. What this buys is that the
+   * receipt stops travelling through WhatsApp and the payer can see that their
+   * claim landed.
+   */
+  app.post<{
+    Params: { reference: string };
+    Body: { operation?: string; paidOn?: string; bank?: string };
+  }>("/billing/payments/:reference/declare", auth, async (req, reply) => {
+    const operation = (req.body?.operation ?? "").trim();
+    if (operation.length < 3 || operation.length > 64) {
+      return reply.code(400).send({ error: "invalid_operation" });
+    }
+    const paidOn = (req.body?.paidOn ?? "").trim();
+    if (paidOn && !/^\d{4}-\d{2}-\d{2}$/.test(paidOn)) {
+      return reply.code(400).send({ error: "invalid_paid_on" });
+    }
+    const bank = (req.body?.bank ?? "").trim().slice(0, 64);
+
+    const payment = await prisma.payment.findFirst({
+      where: { reference: req.params.reference, userId: userId(req) },
+    });
+    if (!payment) return reply.code(404).send({ error: "not_found" });
+    if (payment.status !== "pending" && payment.status !== "review") {
+      return reply.code(409).send({ error: "not_claimable" });
+    }
+
+    const previous =
+      typeof payment.metadata === "object" && payment.metadata !== null && !Array.isArray(payment.metadata)
+        ? payment.metadata
+        : {};
+
+    const updated = await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "review",
+        expiresAt: null,
+        metadata: {
+          ...previous,
+          declaration: {
+            operation,
+            paidOn: paidOn || null,
+            bank: bank || null,
+            declaredAt: new Date().toISOString(),
+          },
+        },
+      },
+    });
+    return publicPayment(updated);
+  });
+
   // ── Webhooks ──────────────────────────────────────────────────────────────
   // Encapsulated so the raw-body parser applies here and nowhere else: a
   // signature has to be checked over the exact bytes received, and the global
@@ -265,9 +339,10 @@ export async function registerBilling(app: FastifyInstance) {
   // ── Admin: the manual-qr confirmation queue ───────────────────────────────
 
   app.get<{ Querystring: { status?: string } }>("/admin/payments", admin, async (req) => {
-    const status = req.query.status ?? "pending";
+    // Default queue = everything still waiting on us, declared or not.
+    const status = req.query.status;
     const rows = await prisma.payment.findMany({
-      where: { status },
+      where: status ? { status } : { status: { in: ["pending", "review"] } },
       orderBy: { createdAt: "desc" },
       take: 100,
       include: { user: { select: { email: true, name: true } } },
@@ -305,7 +380,7 @@ export async function registerBilling(app: FastifyInstance) {
     admin,
     async (req, reply) => {
       const { count } = await prisma.payment.updateMany({
-        where: { reference: req.params.reference, status: "pending" },
+        where: { reference: req.params.reference, status: { in: ["pending", "review"] } },
         data: { status: "failed" },
       });
       if (!count) return reply.code(409).send({ error: "not_pending" });
