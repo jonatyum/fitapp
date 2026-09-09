@@ -152,6 +152,7 @@ export interface WorkoutSession {
  * completo es Pro y la racha nunca se cobra.
  */
 export interface StatsSummary {
+  isPro: boolean;
   totalSessions: number;
   sessionsThisWeek: number;
   weekVolume: number;
@@ -174,7 +175,7 @@ export interface Stats {
 // ── Subscriptions ───────────────────────────────────────────────────────────
 
 export type ProviderId = "manual-qr" | "polar";
-export type PaymentStatus = "pending" | "paid" | "failed" | "expired";
+export type PaymentStatus = "pending" | "review" | "paid" | "failed" | "expired";
 
 export interface Plan {
   code: string;
@@ -192,6 +193,14 @@ export interface BillingCatalog {
   providers: { id: ProviderId; enabled: boolean }[];
 }
 
+/** Lo que el pagador declara haber hecho; el admin lo coteja con el banco. */
+export interface Declaration {
+  operation: string;
+  paidOn: string | null;
+  bank: string | null;
+  declaredAt: string;
+}
+
 export interface Payment {
   reference: string;
   planCode: string;
@@ -200,6 +209,7 @@ export interface Payment {
   amountCents: number;
   currency: string;
   amountLabel: string;
+  declaration: Declaration | null;
   createdAt: string;
   expiresAt: string | null;
   paidAt: string | null;

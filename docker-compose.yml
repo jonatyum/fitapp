@@ -42,6 +42,8 @@ services:
       RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-}
       MEDIA_RATE_LIMIT_MAX: ${MEDIA_RATE_LIMIT_MAX:-}
       MEDIA_RATE_LIMIT_WINDOW: ${MEDIA_RATE_LIMIT_WINDOW:-}
+      PLAN_RATE_LIMIT_MAX: ${PLAN_RATE_LIMIT_MAX:-}
+      PLAN_RATE_LIMIT_WINDOW: ${PLAN_RATE_LIMIT_WINDOW:-}
       # No proxy in front of the API locally, so req.ip is already the client.
       TRUST_PROXY: ${TRUST_PROXY:-false}
       WEBHOOK_RATE_LIMIT_MAX: ${WEBHOOK_RATE_LIMIT_MAX:-}

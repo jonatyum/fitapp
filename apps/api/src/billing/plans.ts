@@ -3,16 +3,28 @@ import type { PlanSpec } from "./types.js";
 
 export const FREE = "free";
 export const PRO = "pro";
+export const PRO_QUARTER = "pro-quarter";
+export const PRO_YEAR = "pro-year";
 
 /**
  * The catalog. Prices are in cents of Bolivianos — Bs 49.00/month for Pro.
  * Edit here and the next boot re-seeds; existing subscriptions keep the period
  * they already paid for.
+ *
+ * The three Pro rows are one product bought for different lengths, not three
+ * tiers: everything that asks "is this user Pro?" goes through `isProPlan`.
  */
 export const PLANS: PlanSpec[] = [
   { code: FREE, name: "Free", priceCents: 0, currency: "BOB", periodDays: 0 },
-  { code: PRO, name: "Pro", priceCents: 4900, currency: "BOB", periodDays: 30 },
+  { code: PRO, name: "Pro monthly", priceCents: 4900, currency: "BOB", periodDays: 30 },
+  { code: PRO_QUARTER, name: "Pro quarterly", priceCents: 12900, currency: "BOB", periodDays: 90 },
+  { code: PRO_YEAR, name: "Pro yearly", priceCents: 39900, currency: "BOB", periodDays: 365 },
 ];
+
+const PRO_CODES = new Set<string>([PRO, PRO_QUARTER, PRO_YEAR]);
+
+/** Any paid length of Pro. Never compare a plan code against `PRO` directly. */
+export const isProPlan = (code: string): boolean => PRO_CODES.has(code);
 
 export const planByCode = (code: string): PlanSpec | null =>
   PLANS.find((p) => p.code === code) ?? null;

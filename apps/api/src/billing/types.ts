@@ -4,7 +4,13 @@ import type { FastifyRequest } from "fastify";
 export const PROVIDER_IDS = ["manual-qr", "polar"] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
-export const PAYMENT_STATUSES = ["pending", "paid", "failed", "expired"] as const;
+/**
+ * `review` is manual-qr only: the payer said they transferred and quoted the
+ * operation number, and an admin has not checked the statement yet. It is
+ * still unpaid — it only tells the queue (and the payer) that the ball is on
+ * our side now.
+ */
+export const PAYMENT_STATUSES = ["pending", "review", "paid", "failed", "expired"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export const isProviderId = (v: unknown): v is ProviderId =>

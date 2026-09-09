@@ -250,6 +250,19 @@ export const apiCheckout = (planCode: string, provider?: string) =>
 
 export const apiPayments = () => request<Payment[]>("/billing/payments");
 
+/**
+ * "Ya transferí": el número de operación del banco. No marca el pago como
+ * cobrado — eso sólo lo hace un admin que ha visto el extracto.
+ */
+export const apiDeclarePayment = (
+  reference: string,
+  body: { operation: string; paidOn?: string; bank?: string },
+) =>
+  request<Payment>(`/billing/payments/${reference}/declare`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
 /** Re-reads one payment, asking the provider when it has an API of its own. */
 export const apiPayment = (reference: string) =>
   request<Payment>(`/billing/payments/${reference}`);
