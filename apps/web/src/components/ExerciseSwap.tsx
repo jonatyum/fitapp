@@ -62,7 +62,7 @@ export function ExerciseSwap({
   const row = (ex: Alternative) => (
     <li key={ex.id}>
       <button className="exrow" onClick={() => onPick(ex)} disabled={busy}>
-        <img src={mediaUrl(ex.gifUrl)} alt="" loading="lazy" />
+        <img src={mediaUrl(ex.image)} alt="" loading="lazy" />
         <span className="exrow-main">
           <span className="exrow-name">{translateName(ex.name, lang)}</span>
           <span className="exrow-meta">

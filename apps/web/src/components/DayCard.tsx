@@ -68,7 +68,7 @@ export function DayCard({
               onClick={() => onOpenExercise?.(e.exercise)}
               disabled={!onOpenExercise}
             >
-              <img src={mediaUrl(e.exercise.gifUrl)} alt="" loading="lazy" />
+              <img src={mediaUrl(e.exercise.image)} alt="" loading="lazy" />
               <span className="exrow-main">
                 <span className="exrow-name">{translateName(e.exercise.name, lang)}</span>
                 <span className="exrow-meta">

@@ -192,7 +192,7 @@ export function registerSessions(app: FastifyInstance) {
     const sessions = await prisma.workoutSession.findMany({
       where: { userId: userId(req), finishedAt: { not: null } },
       orderBy: { startedAt: "desc" },
-      include: { sets: { include: { exercise: { select: { name: true, gifUrl: true } } } } },
+      include: { sets: { include: { exercise: { select: { name: true, image: true } } } } },
     });
 
     let totalVolume = 0;
@@ -202,7 +202,7 @@ export function registerSessions(app: FastifyInstance) {
     const byWeek = new Map<string, { volume: number; sessions: number }>();
     const byExercise = new Map<
       string,
-      { name: string; gifUrl: string; volume: number; sets: number; bestWeight: number; bestReps: number; best1rm: number }
+      { name: string; image: string; volume: number; sets: number; bestWeight: number; bestReps: number; best1rm: number }
     >();
 
     for (const s of sessions) {
@@ -221,7 +221,7 @@ export function registerSessions(app: FastifyInstance) {
           byExercise.get(set.exerciseId) ??
           {
             name: set.exercise.name,
-            gifUrl: set.exercise.gifUrl,
+            image: set.exercise.image,
             volume: 0,
             sets: 0,
             bestWeight: 0,
@@ -270,7 +270,7 @@ export function registerSessions(app: FastifyInstance) {
       topExercises: entries
         .sort((a, b) => b[1].volume - a[1].volume)
         .slice(0, 5)
-        .map(([id, e]) => ({ exerciseId: id, name: e.name, gifUrl: e.gifUrl, volume: e.volume, sets: e.sets })),
+        .map(([id, e]) => ({ exerciseId: id, name: e.name, image: e.image, volume: e.volume, sets: e.sets })),
       records: entries
         .filter(([, e]) => e.bestWeight > 0)
         .sort((a, b) => b[1].best1rm - a[1].best1rm)

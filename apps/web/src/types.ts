@@ -167,7 +167,7 @@ export interface Stats {
   sessionsThisWeek: number;
   streakWeeks: number;
   weekly: { week: string; volume: number; sessions: number }[];
-  topExercises: { exerciseId: string; name: string; gifUrl: string; volume: number; sets: number }[];
+  topExercises: { exerciseId: string; name: string; image: string; volume: number; sets: number }[];
   records: { exerciseId: string; name: string; bestWeight: number; bestReps: number; est1rm: number }[];
 }
 

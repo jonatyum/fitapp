@@ -167,7 +167,7 @@ export function WorkoutLogger({
             aria-label={t("viewExercise")}
             title={t("viewExercise")}
           >
-            <img src={mediaUrl(e.exercise.gifUrl)} alt="" loading="lazy" />
+            <img src={mediaUrl(e.exercise.image)} alt="" loading="lazy" />
             <div>
               <strong>{translateName(e.exercise.name, lang)}</strong>
               <small>
