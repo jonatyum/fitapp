@@ -21,8 +21,8 @@ export function ExerciseCard({
       <span className="card-body">
         <span className="card-title exercise">{translateName(ex.name, lang)}</span>
         <span className="card-meta">
-          <span className="tag target">{tv(ex.target)}</span>
-          <span className="tag plain">{tv(ex.equipment)}</span>
+          <span className="badge brand">{tv(ex.target)}</span>
+          <span className="badge soft">{tv(ex.equipment)}</span>
         </span>
       </span>
     </button>

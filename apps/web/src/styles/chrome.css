@@ -38,16 +38,18 @@
   line-height: 1;
 }
 
-/* Oculto en base: a menos de 480px no cabe junto al lockup y la barra de
-   filtros ya cubre la búsqueda a ese ancho. Se reactiva en ≥480. */
 .searchbox {
-  display: none;
   position: relative;
   flex: 1;
   min-width: 0;
   max-width: 520px;
   margin-inline: auto;
 }
+/* Una sola caja de búsqueda a la vez, en el sitio donde cabe. Por debajo de
+   480 la cabecera no tiene ancho para ella junto al lockup, así que vive en la
+   barra de filtros; a partir de ahí sube al header y baja de la barra. */
+.topbar .searchbox { display: none; }
+.filterbar .searchbox { display: block; max-width: none; margin-inline: 0; }
 .searchbox > svg {
   position: absolute;
   left: var(--space-3);
@@ -196,6 +198,14 @@
   box-shadow: var(--shadow-xs);
 }
 
+/* Los filtros finos se pliegan en móvil: desplegados dejaban 394px de cromo
+   antes del primer ejercicio. El buscador, el conmutador y el recuento se
+   quedan siempre, y el botón lleva cuántos filtros hay puestos. */
+.filterbar-toggle { margin-left: auto; }
+.filterbar[data-filters="closed"] .chip-row,
+.filterbar[data-filters="closed"] .pill-scroll,
+.filterbar[data-filters="closed"] .filterbar-dropdowns { display: none; }
+
 .filterbar-meta {
   display: flex;
   align-items: center;
@@ -237,7 +247,7 @@
   position: relative;
   flex: 0 0 auto;
   scroll-snap-align: start;
-  min-height: 40px;
+  min-height: var(--touch-min);
   padding: var(--space-2) var(--space-4);
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
@@ -356,18 +366,15 @@
   gap: var(--space-3);
 }
 
-.tag {
-  display: inline-flex;
+/* Paginación del catálogo. Centrada y con el recuento debajo: el botón dice
+   qué hace y la línea dice cuánto queda. */
+.grid-more {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 3px var(--space-2);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  text-transform: capitalize;
-  white-space: nowrap;
+  gap: var(--space-2);
+  padding-block: var(--space-8);
 }
-.tag.target { background: var(--brand-soft); color: var(--brand-text); }
-.tag.plain  { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
 
 .status {
   grid-column: 1 / -1;

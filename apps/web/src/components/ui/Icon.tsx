@@ -40,6 +40,7 @@ export type IconName =
   | "eye"
   | "refresh"
   | "swap"
+  | "sliders"
   | "sparkle";
 
 const PATHS: Record<IconName, JSX.Element> = {
@@ -156,6 +157,7 @@ const PATHS: Record<IconName, JSX.Element> = {
   // Intercambio: dos carriles en sentidos opuestos. No es el circular de
   // `refresh`, que significa "regenerar", sino "cambiar esto por otra cosa".
   swap: <path d="M4 8h13M14 5l3 3-3 3M20 16H7m3-3-3 3 3 3" />,
+  sliders: <path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M8 15v4" />,
   sparkle: <path d="m12 3 2 5.6 5.6 2-5.6 2-2 5.6-2-5.6-5.6-2 5.6-2zM18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />,
 };
 

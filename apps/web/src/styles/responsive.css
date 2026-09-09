@@ -8,7 +8,8 @@
 
   /* Por debajo de 480 no cabe junto al lockup; la barra de filtros cubre la
      búsqueda a ese ancho. */
-  .searchbox { display: block; }
+  .topbar .searchbox { display: block; }
+  .filterbar .searchbox { display: none; }
 
   .stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .wizard-actions { flex-direction: row; flex-wrap: wrap; }
@@ -23,12 +24,6 @@
   .app-main { padding-block: var(--space-6) var(--space-12); }
 
   .lang-name { display: inline; }
-
-  .filterbar-row { flex-direction: row; align-items: center; gap: var(--space-4); }
-  .pill-scroll { flex: 1; min-width: 0; }
-  .filterbar-dropdowns { flex: 0 0 auto; }
-  .dropdown { flex: 0 0 auto; }
-  .dropdown-menu { left: auto; right: 0; }
 
   .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4); }
 
@@ -82,6 +77,21 @@
 
 @media (min-width: 1024px) {
   :root { --gutter: var(--space-8); }
+
+  /* La barra pasa a una sola línea aquí, no en 768: con el conmutador, los dos
+     atajos y los dos desplegables en la misma fila, a 768 el scroller de partes
+     del cuerpo se quedaba en 11px de ancho y las pills no se veían.
+     Y como aquí ya se ve todo a la vez, no hay nada que plegar. */
+  .filterbar-toggle { display: none; }
+  .filterbar[data-filters="closed"] .chip-row,
+  .filterbar[data-filters="closed"] .pill-scroll,
+  .filterbar[data-filters="closed"] .filterbar-dropdowns { display: flex; }
+
+  .filterbar-row { flex-direction: row; align-items: center; gap: var(--space-4); }
+  .pill-scroll { flex: 1; min-width: 0; }
+  .filterbar-dropdowns { flex: 0 0 auto; }
+  .dropdown { flex: 0 0 auto; }
+  .dropdown-menu { left: auto; right: 0; }
 
   /* La navegación sube al header y la tabbar desaparece. Hasta 1024 no cabe:
      las cinco pestañas con texto dejaban al buscador en 0px de ancho y

@@ -9,6 +9,8 @@ export type CatalogKey =
   | "clearAll"
   | "results"
   | "noResults"
+  | "loadMore"
+  | "showingOf"
   | "steps"
   | "targetLabel"
   | "secondaryLabel"
@@ -34,6 +36,8 @@ export const catalog: Record<Lang, Record<CatalogKey, string>> = {
     clearAll: "Clear",
     results: "{n} exercises",
     noResults: "No exercises found",
+    loadMore: "Show more",
+    showingOf: "Showing {n} of {total}",
     steps: "Step-by-step",
     targetLabel: "Target",
     secondaryLabel: "Secondary muscles",
@@ -59,6 +63,8 @@ export const catalog: Record<Lang, Record<CatalogKey, string>> = {
     clearAll: "Limpiar",
     results: "{n} ejercicios",
     noResults: "No se encontraron ejercicios",
+    loadMore: "Ver más",
+    showingOf: "Mostrando {n} de {total}",
     steps: "Paso a paso",
     targetLabel: "Objetivo",
     secondaryLabel: "Músculos secundarios",
