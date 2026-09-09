@@ -1,10 +1,102 @@
-import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "../../i18n/I18nContext";
 import { Icon } from "./Icon";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const DRAG_START_PX = 8;
+const DRAG_CLOSE_PX = 88;
+const DRAG_CLOSE_SPEED = 0.5;
+const DRAG_CLOSE_MS = 180;
+const DRAG_RETURN_MS = 200;
+const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+const isSheet = () => !window.matchMedia("(min-width: 768px)").matches;
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Arrastrar la hoja hacia abajo la cierra, que es lo que espera cualquiera que
+ * vea el tirador. Solo en móvil: a partir de 768px el diálogo es un modal
+ * centrado y el gesto no significa nada.
+ *
+ * El arrastre no empieza si el dedo cae sobre un `.modal-body` ya desplazado:
+ * ahí el gesto es del scroll, no de la hoja.
+ */
+function useSheetDrag(panel: RefObject<HTMLDivElement>, onClose: () => void, enabled: boolean) {
+  const drag = useRef<{ id: number; startY: number; startAt: number; dy: number; active: boolean } | null>(null);
+
+  const settle = useCallback((transform: string, ms: number) => {
+    const el = panel.current;
+    if (!el) return;
+    el.style.transition = `transform ${ms}ms ${EASE_OUT}`;
+    el.style.transform = transform;
+    window.setTimeout(() => {
+      if (!panel.current || drag.current) return;
+      panel.current.style.transition = "";
+      panel.current.style.transform = "";
+    }, ms);
+  }, [panel]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!enabled || drag.current || !isSheet()) return;
+    const from = e.target instanceof Element ? e.target.closest<HTMLElement>(".modal-body") : null;
+    if (from && from.scrollTop > 0) return;
+    drag.current = { id: e.pointerId, startY: e.clientY, startAt: e.timeStamp, dy: 0, active: false };
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = drag.current;
+    const el = panel.current;
+    if (!state || !el || e.pointerId !== state.id) return;
+
+    state.dy = Math.max(0, e.clientY - state.startY);
+    if (!state.active) {
+      if (state.dy < DRAG_START_PX) return;
+      state.active = true;
+      el.setPointerCapture(e.pointerId);
+      el.style.transition = "none";
+      el.style.userSelect = "none";
+    }
+    el.style.transform = `translateY(${state.dy}px)`;
+  };
+
+  const end = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = drag.current;
+    const el = panel.current;
+    if (!state || e.pointerId !== state.id) return;
+    drag.current = null;
+    if (!state.active || !el) return;
+
+    el.style.userSelect = "";
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+
+    const speed = state.dy / Math.max(1, e.timeStamp - state.startAt);
+    const closing = state.dy > DRAG_CLOSE_PX || (speed > DRAG_CLOSE_SPEED && state.dy > DRAG_START_PX * 3);
+    if (!closing) {
+      settle("translateY(0)", DRAG_RETURN_MS);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      onClose();
+      return;
+    }
+    settle("translateY(100%)", DRAG_CLOSE_MS);
+    window.setTimeout(onClose, DRAG_CLOSE_MS);
+  };
+
+  const onPointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = drag.current;
+    drag.current = null;
+    if (!state?.active || !panel.current) return;
+    panel.current.style.userSelect = "";
+    if (panel.current.hasPointerCapture(e.pointerId)) panel.current.releasePointerCapture(e.pointerId);
+    settle("translateY(0)", DRAG_RETURN_MS);
+  };
+
+  return { onPointerDown, onPointerMove, onPointerUp: end, onPointerCancel };
+}
 
 /**
  * Diálogo accesible, único para toda la app: `.sheet` en móvil y `.modal`
@@ -40,6 +132,7 @@ export function Dialog({
   const opener = useRef<HTMLElement | null>(null);
   const autoId = useId();
   const titleId = labelledBy ?? `${autoId}-title`;
+  const dragHandlers = useSheetDrag(panel, onClose, dismissible);
 
   const focusables = useCallback(
     () => Array.from(panel.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []),
@@ -110,6 +203,7 @@ export function Dialog({
         aria-labelledby={titleId}
         ref={panel}
         tabIndex={-1}
+        {...dragHandlers}
       >
         <div className="sheet-grabber" aria-hidden="true" />
 

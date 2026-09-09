@@ -558,7 +558,7 @@
 }
 @keyframes overlay-in { from { opacity: 0; } }
 
-/* Móvil: bottom sheet. */
+/* Móvil: bottom sheet, que se cierra arrastrándolo hacia abajo (Dialog.tsx). */
 .sheet,
 .modal {
   position: relative;
@@ -585,6 +585,11 @@
   background: var(--border-strong);
 }
 
+/* El tirador y la cabecera son el asa: sin esto el navegador se queda el
+   gesto vertical y el arrastre nunca llega a JS. */
+.sheet-grabber,
+.modal-header { touch-action: none; }
+
 .modal-header {
   display: flex;
   align-items: flex-start;
@@ -592,7 +597,12 @@
   padding: var(--space-5) var(--space-5) var(--space-3);
 }
 .modal-header > :first-child { flex: 1; min-width: 0; }
-.modal-body { flex: 1; overflow-y: auto; padding: var(--space-2) var(--space-5) var(--space-5); }
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-2) var(--space-5) var(--space-5);
+}
 .modal-footer {
   display: flex;
   /* En móvil se apilan con el primario arriba: en el DOM va el último, que es
