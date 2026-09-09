@@ -42,6 +42,7 @@
   .modal.wide { width: min(880px, calc(100vw - var(--space-8))); }
   @keyframes modal-in { from { opacity: 0; transform: scale(0.96); } }
   .sheet-grabber { display: none; }
+  .modal-header { touch-action: auto; }
   .modal-footer { flex-direction: row; justify-content: flex-end; padding-bottom: var(--space-5); }
 
   .toast-stack {
