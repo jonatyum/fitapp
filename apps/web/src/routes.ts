@@ -11,6 +11,7 @@ export type View =
   | "progress"
   | "billing"
   | "workout"
+  | "settings"
   | "admin";
 
 export const PATHS: Record<View, string> = {
@@ -22,6 +23,7 @@ export const PATHS: Record<View, string> = {
   progress: "/progress",
   billing: "/plans",
   workout: "/workout",
+  settings: "/settings",
   admin: "/admin",
 };
 

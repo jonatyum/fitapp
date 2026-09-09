@@ -6,10 +6,7 @@ import { navigate } from "../router";
 import { PATHS } from "../routes";
 import { Icon, type IconName } from "./ui/Icon";
 
-/**
- * Cuarta pestaña: identidad y los destinos que salieron de la barra. El slice 5
- * le añade la configuración de la cuenta.
- */
+/** Cuarta pestaña: identidad y los destinos que salieron de la barra. */
 const LINKS: { view: "progress" | "billing"; label: UIKey; icon: IconName }[] = [
   { view: "progress", label: "navProgress", icon: "chart" },
   { view: "billing", label: "navPlans", icon: "credit-card" },
@@ -75,6 +72,16 @@ export function MeView({ onSignIn }: { onSignIn: () => void }) {
       </header>
 
       {links}
+
+      <ul className="linklist">
+        <li>
+          <button className="linkrow" onClick={() => navigate(PATHS.settings)}>
+            <Icon name="settings" size={20} />
+            <span>{t("settingsTitle")}</span>
+            <Icon name="chevron-right" size={18} className="linkrow-go" />
+          </button>
+        </li>
+      </ul>
 
       {user.role === "admin" && (
         <ul className="linklist">

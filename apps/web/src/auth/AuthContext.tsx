@@ -9,10 +9,13 @@ import {
 } from "react";
 import {
   apiAuthConfig,
+  apiChangePassword,
+  apiDeleteAccount,
   apiGoogleLogin,
   apiLogin,
   apiMe,
   apiRegister,
+  apiUpdateProfile,
   getToken,
   setToken,
 } from "../api";
@@ -29,6 +32,10 @@ interface AuthValue {
   register: (email: string, password: string, name: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
+  updateName: (name: string) => Promise<void>;
+  /** Sin `currentPassword` cuando la cuenta aún no tiene ninguna. */
+  changePassword: (input: { currentPassword?: string; newPassword: string }) => Promise<void>;
+  deleteAccount: (input: { password?: string; confirm?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -81,9 +88,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateName = useCallback(async (name: string) => {
+    setUser(await apiUpdateProfile(name));
+  }, []);
+
+  // La respuesta trae el usuario ya actualizado, así que `hasPassword` deja de
+  // ser false en cuanto la cuenta de Google crea la suya.
+  const changePassword = useCallback(
+    async (input: { currentPassword?: string; newPassword: string }) => {
+      setUser(await apiChangePassword(input));
+    },
+    [],
+  );
+
+  const deleteAccount = useCallback(
+    async (input: { password?: string; confirm?: string }) => {
+      await apiDeleteAccount(input);
+      logout();
+    },
+    [logout],
+  );
+
   const value = useMemo(
-    () => ({ user, ready, googleClientId, login, register, loginWithGoogle, logout }),
-    [user, ready, googleClientId, login, register, loginWithGoogle, logout],
+    () => ({
+      user,
+      ready,
+      googleClientId,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      updateName,
+      changePassword,
+      deleteAccount,
+    }),
+    [
+      user,
+      ready,
+      googleClientId,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      updateName,
+      changePassword,
+      deleteAccount,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

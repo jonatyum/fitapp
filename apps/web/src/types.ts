@@ -38,6 +38,8 @@ export interface User {
   avatarUrl: string | null;
   /** "client" | "admin". Sólo decide qué se enseña; autoriza el servidor. */
   role: string;
+  /** false en las cuentas que solo entran con Google: aún no tienen ninguna. */
+  hasPassword: boolean;
 }
 
 export type Goal = "strength" | "hypertrophy" | "endurance" | "fatloss";

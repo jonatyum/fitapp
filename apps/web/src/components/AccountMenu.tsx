@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
+import { navigate } from "../router";
+import { PATHS } from "../routes";
 import { Icon } from "./ui/Icon";
 
 /**
  * El avatar abre un menú, no cierra la sesión de un toque: cerrar sesión sin
  * confirmación al pulsar el propio avatar era una trampa fácil de disparar.
- * En el slice 5 este menú gana perfil, ajustes y (según rol) administración.
+ * Administración no está aquí a propósito: se entra desde "Yo" y sólo con el
+ * rol, que es lo acordado para una ruta oculta.
  */
 export function AccountMenu() {
   const { t } = useI18n();
@@ -63,6 +66,18 @@ export function AccountMenu() {
             <strong>{user.name}</strong>
             <span>{user.email}</span>
           </div>
+          <button
+            type="button"
+            className="menu-item"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              navigate(PATHS.settings);
+            }}
+          >
+            <Icon name="settings" size={18} />
+            {t("settingsTitle")}
+          </button>
           <button
             type="button"
             className="menu-item"
