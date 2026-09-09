@@ -16,7 +16,7 @@ export function ExerciseCard({
        y responde a Enter y Espacio sin código extra. */
     <button type="button" className="card interactive" onClick={() => onOpen(ex)}>
       <span className="card-media">
-        <img src={mediaUrl(ex.gifUrl)} alt="" loading="lazy" />
+        <img src={mediaUrl(ex.image)} alt="" loading="lazy" />
       </span>
       <span className="card-body">
         <span className="card-title exercise">{translateName(ex.name, lang)}</span>

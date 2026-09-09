@@ -146,7 +146,7 @@ export function ProgressView({ onSeePlans }: { onSeePlans: () => void }) {
             <ul className="ranklist">
               {stats.topExercises.map((e) => (
                 <li key={e.exerciseId}>
-                  <img src={mediaUrl(e.gifUrl)} alt="" loading="lazy" />
+                  <img src={mediaUrl(e.image)} alt="" loading="lazy" />
                   <span className="rank-main">
                     <strong>{translateName(e.name, lang)}</strong>
                     <small>{t("setsN", { n: e.sets })}</small>

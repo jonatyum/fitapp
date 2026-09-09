@@ -37,9 +37,39 @@ interface PublicUser {
   avatarUrl: string | null;
 }
 
+/** Published in this repository, so it can only ever sign local sessions. */
+const DEV_JWT_SECRET = "dev-secret-change-me";
+
+/**
+ * A deployment that loses JWT_SECRET used to come up signing with the value
+ * above — which anyone can read here, and therefore use to mint a token for
+ * any account. In production that is a boot failure now: the container exits
+ * and the deploy is marked failed instead of quietly serving forgeable
+ * sessions. `Dockerfile.render` is what sets NODE_ENV=production.
+ */
+function jwtSecret(app: FastifyInstance): string {
+  const secret = process.env.JWT_SECRET?.trim() ?? "";
+
+  if (process.env.NODE_ENV !== "production") {
+    if (!secret) {
+      app.log.warn("JWT_SECRET is unset: signing with the public development secret");
+    }
+    return secret || DEV_JWT_SECRET;
+  }
+
+  if (!secret) throw new Error("JWT_SECRET is required in production");
+  if (secret === DEV_JWT_SECRET) {
+    throw new Error("JWT_SECRET is the development secret published in the repository");
+  }
+  if (secret.length < 32) {
+    throw new Error("JWT_SECRET must be at least 32 characters in production");
+  }
+  return secret;
+}
+
 export async function registerAuth(app: FastifyInstance) {
   await app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET ?? "dev-secret-change-me",
+    secret: jwtSecret(app),
     sign: { expiresIn: "30d" },
   });
 
