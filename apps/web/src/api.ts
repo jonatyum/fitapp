@@ -1,4 +1,6 @@
 import type {
+  AdminPayment,
+  AdminUser,
   Alternative,
   BillingCatalog,
   CheckoutResult,
@@ -233,6 +235,33 @@ export const apiStats = () => request<Stats>("/stats");
 
 /** Racha y semana en curso; libre, a diferencia de `/stats`. */
 export const apiStatsSummary = () => request<StatsSummary>("/stats/summary");
+
+// Administración
+
+export const apiAdminPayments = (params: { status?: string; q?: string } = {}) => {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v);
+  return request<AdminPayment[]>(`/admin/payments?${qs.toString()}`);
+};
+
+/** Da por bueno un pago y arranca el periodo. Sólo tras ver el extracto. */
+export const apiConfirmPayment = (reference: string) =>
+  request<{ payment: AdminPayment; subscription: Subscription }>(
+    `/admin/payments/${reference}/confirm`,
+    { method: "POST" },
+  );
+
+export const apiRejectPayment = (reference: string) =>
+  request<{ ok: boolean }>(`/admin/payments/${reference}/reject`, { method: "POST" });
+
+export const apiAdminUsers = (q = "") =>
+  request<AdminUser[]>(`/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+
+export const apiSetUserRole = (id: string, role: string) =>
+  request<AdminUser>(`/admin/users/${id}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
 
 // Subscriptions
 

@@ -1,4 +1,5 @@
 import type { Lang } from "./languages";
+import { admin, type AdminKey } from "./ui/admin";
 import { auth, type AuthKey } from "./ui/auth";
 import { billing, type BillingKey } from "./ui/billing";
 import { catalog, type CatalogKey } from "./ui/catalog";
@@ -25,7 +26,8 @@ export type UIKey =
   | WorkoutKey
   | ProgressKey
   | BillingKey
-  | TodayKey;
+  | TodayKey
+  | AdminKey;
 
 export const UI: Record<Lang, Record<UIKey, string>> = {
   en: {
@@ -37,6 +39,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     ...progress.en,
     ...billing.en,
     ...today.en,
+    ...admin.en,
   },
   es: {
     ...common.es,
@@ -47,5 +50,6 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     ...progress.es,
     ...billing.es,
     ...today.es,
+    ...admin.es,
   },
 };
