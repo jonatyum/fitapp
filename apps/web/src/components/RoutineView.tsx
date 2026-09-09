@@ -193,6 +193,9 @@ export function RoutineView({
           slot={swapping.current.slot}
           level={current.level}
           equipment={current.equipment}
+          // Ahora que `place` se guarda, el cambio de ejercicio respeta si el
+          // plan era de casa en vez de deducirlo del equipo.
+          place={current.place ?? undefined}
           exclude={
             current.days.find((d) => d.id === swapping.dayId)?.exercises.map((e) => e.exerciseId) ??
             []

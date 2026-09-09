@@ -8,7 +8,7 @@ import { Icon, type IconName } from "./ui/Icon";
 
 /**
  * Cuarta pestaña: identidad y los destinos que salieron de la barra. El slice 5
- * le añade la configuración de la cuenta; el 4, la entrada a administración.
+ * le añade la configuración de la cuenta.
  */
 const LINKS: { view: "progress" | "billing"; label: UIKey; icon: IconName }[] = [
   { view: "progress", label: "navProgress", icon: "chart" },
@@ -53,6 +53,8 @@ export function MeView({ onSignIn }: { onSignIn: () => void }) {
 
   return (
     <div className="me">
+      {/* Administración no es una pestaña ni sale en ningún menú: se entra
+          desde aquí, y sólo si el rol lo permite. */}
       <header className="me-head">
         <span className="avatar lg">
           {user.avatarUrl && !broken ? (
@@ -73,6 +75,18 @@ export function MeView({ onSignIn }: { onSignIn: () => void }) {
       </header>
 
       {links}
+
+      {user.role === "admin" && (
+        <ul className="linklist">
+          <li>
+            <button className="linkrow" onClick={() => navigate(PATHS.admin)}>
+              <Icon name="shield" size={20} />
+              <span>{t("adminTitle")}</span>
+              <Icon name="chevron-right" size={18} className="linkrow-go" />
+            </button>
+          </li>
+        </ul>
+      )}
 
       <button className="btn secondary block" onClick={logout}>
         <Icon name="logout" size={18} />

@@ -35,6 +35,7 @@ interface PublicUser {
   email: string;
   name: string;
   avatarUrl: string | null;
+  role: string;
 }
 
 /** Published in this repository, so it can only ever sign local sessions. */
@@ -78,6 +79,9 @@ export async function registerAuth(app: FastifyInstance) {
     email: u.email,
     name: u.name,
     avatarUrl: u.avatarUrl,
+    // Pista para la interfaz: decide si se enseña la entrada de administración.
+    // La autorización de verdad la hace el servidor leyendo la columna.
+    role: u.role,
   });
 
   const session = (u: PublicUser) => ({

@@ -10,7 +10,8 @@ export type View =
   | "me"
   | "progress"
   | "billing"
-  | "workout";
+  | "workout"
+  | "admin";
 
 export const PATHS: Record<View, string> = {
   today: "/",
@@ -21,6 +22,7 @@ export const PATHS: Record<View, string> = {
   progress: "/progress",
   billing: "/plans",
   workout: "/workout",
+  admin: "/admin",
 };
 
 export const VIEW_BY_PATH: Record<string, View> = Object.fromEntries(

@@ -13,6 +13,7 @@ import { ExerciseCard, SkeletonCard } from "./components/ExerciseCard";
 import { ExerciseDetail } from "./components/ExerciseDetail";
 import { FilterBar, type FilterState } from "./components/FilterBar";
 import { MuscleMap } from "./components/MuscleMap";
+import { AdminView } from "./components/AdminView";
 import { AuthModal } from "./components/AuthModal";
 import { MeView } from "./components/MeView";
 import { RoutineView } from "./components/RoutineView";
@@ -67,6 +68,12 @@ export function App() {
     if (!VIEW_BY_PATH[path]) navigate(PATHS.today, { replace: true });
     else if (view === "workout" && !workout) navigate(PATHS.routine, { replace: true });
     else if (view === "routine" && ready && !user) navigate(PATHS.wizard, { replace: true });
+    // /admin no está enlazada en ningún sitio salvo en "Yo" y sólo para quien
+    // tiene el rol; entrar a mano sin él devuelve a Hoy. La autorización de
+    // verdad la hace el API en cada petición.
+    else if (view === "admin" && ready && user?.role !== "admin") {
+      navigate(PATHS.today, { replace: true });
+    }
   }, [path, view, workout, ready, user]);
 
   const [q, setQ] = useState("");
@@ -274,6 +281,12 @@ export function App() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {view === "admin" && user?.role === "admin" && (
+          <div className="container narrow">
+            <AdminView />
           </div>
         )}
 

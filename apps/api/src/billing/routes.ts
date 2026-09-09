@@ -1,6 +1,7 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { prisma } from "../db.js";
 import { requireAuth, userId } from "../auth.js";
+import { requireAdmin } from "../roles.js";
 import { FREE, PLANS, formatAmount, planByCode } from "./plans.js";
 import { defaultProvider, providerById, providerSummary } from "./providers.js";
 import { activateFromPayment, entitlementFor, newReference } from "./subscriptions.js";
@@ -15,28 +16,6 @@ const PENDING_HOURS = (() => {
   const n = Number(process.env.PAYMENT_PENDING_HOURS);
   return Number.isFinite(n) && n > 0 ? n : 72;
 })();
-
-/**
- * There is no role column on User: admins are an env allow-list checked against
- * the signed-in account. Empty list = nobody is an admin, which is the right
- * default for a deploy that forgot to set it.
- */
-const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean),
-);
-
-async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId(req) },
-    select: { email: true },
-  });
-  if (!user || !ADMIN_EMAILS.has(user.email.toLowerCase())) {
-    return reply.code(403).send({ error: "forbidden" });
-  }
-}
 
 /** What the payer says they did. The admin still checks it against the bank. */
 interface Declaration {
@@ -338,17 +317,36 @@ export async function registerBilling(app: FastifyInstance) {
 
   // ── Admin: the manual-qr confirmation queue ───────────────────────────────
 
-  app.get<{ Querystring: { status?: string } }>("/admin/payments", admin, async (req) => {
-    // Default queue = everything still waiting on us, declared or not.
-    const status = req.query.status;
-    const rows = await prisma.payment.findMany({
-      where: status ? { status } : { status: { in: ["pending", "review"] } },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-      include: { user: { select: { email: true, name: true } } },
-    });
-    return rows.map((p) => ({ ...publicPayment(p), user: p.user }));
-  });
+  app.get<{ Querystring: { status?: string; q?: string; limit?: string } }>(
+    "/admin/payments",
+    admin,
+    async (req) => {
+      // Default queue = everything still waiting on us, declared or not.
+      const status = req.query.status;
+      const q = (req.query.q ?? "").trim();
+      const take = Math.min(Number(req.query.limit) || 50, 100);
+
+      const rows = await prisma.payment.findMany({
+        where: {
+          ...(status ? { status } : { status: { in: ["pending", "review"] } }),
+          // Se busca por referencia o por el correo de quien pagó: son los dos
+          // datos que llegan cuando alguien escribe preguntando por su pago.
+          ...(q
+            ? {
+                OR: [
+                  { reference: { contains: q, mode: "insensitive" as const } },
+                  { user: { email: { contains: q, mode: "insensitive" as const } } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: { createdAt: "desc" },
+        take,
+        include: { user: { select: { email: true, name: true } } },
+      });
+      return rows.map((p) => ({ ...publicPayment(p), user: p.user }));
+    },
+  );
 
   /** Confirm a transfer that landed in the account and start the period. */
   app.post<{ Params: { reference: string } }>(

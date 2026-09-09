@@ -36,6 +36,8 @@ export interface User {
   name: string;
   /** Google profile picture, when the account is linked to Google */
   avatarUrl: string | null;
+  /** "client" | "admin". Sólo decide qué se enseña; autoriza el servidor. */
+  role: string;
 }
 
 export type Goal = "strength" | "hypertrophy" | "endurance" | "fatloss";
@@ -96,6 +98,7 @@ export interface Routine {
   daysPerWeek: number;
   split: string;
   equipment: string[];
+  place: Place | null;
   active: boolean;
   createdAt: string;
   days: RoutineDay[];
@@ -235,6 +238,25 @@ export interface ChargeInstructions {
   amountCents: number;
   currency: string;
   contact: string;
+}
+
+// ── Administración ──────────────────────────────────────────────────────────
+
+/** Una cuenta vista desde el panel. Nunca trae credenciales. */
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string;
+  entitlement: Subscription;
+  routines: number;
+  sessions: number;
+}
+
+/** Un pago en la cola, con quién lo hizo (null si la cuenta ya no existe). */
+export interface AdminPayment extends Payment {
+  user: { email: string; name: string } | null;
 }
 
 export type Charge =

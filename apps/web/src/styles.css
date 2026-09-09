@@ -2297,6 +2297,42 @@ h1, h2, h3, h4 { text-wrap: balance; }
   text-transform: uppercase;
 }
 
+/* ── Panel de administración ───────────────────────────────────────────── */
+.admin { display: flex; flex-direction: column; gap: var(--space-4); }
+.admin > h1 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+.admin-tools { display: flex; align-items: center; gap: var(--space-2); }
+
+.adminlist { display: flex; flex-direction: column; gap: var(--space-3); }
+/* Una fila por operación: en el móvil se opera con el pulgar, así que cada
+   una es una tarjeta con sus acciones dentro, no una celda de tabla. */
+.adminrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.adminrow-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.adminrow-head strong { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.adminrow-amount {
+  margin-left: auto;
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+}
+.adminrow-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
 /* ── Paywall contextual ────────────────────────────────────────────────── */
 .paywall { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
 .paywall p { color: var(--text-2); font-size: var(--text-md); }

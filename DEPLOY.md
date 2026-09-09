@@ -213,21 +213,25 @@ Variables en Render (ver `.env.example`):
 | `QR_CONTACT` | **obligatoria** — a dónde manda el comprobante (WhatsApp) |
 | `QR_BANK_NAME`, `QR_ACCOUNT_NAME` | se muestran en las instrucciones |
 | `QR_IMAGE_URL` | URL de la imagen del QR (opcional) |
-| `ADMIN_EMAILS` | quién puede confirmar pagos, separados por comas |
+| `ADMIN_EMAILS` | **semilla** de administradores, separados por comas: en cada arranque asciende esas cuentas al rol `admin`. A partir de ahí manda la columna `role` y los admins se gestionan desde el panel (`/admin`). Nunca degrada a nadie |
 
 Si faltan las dos obligatorias, la pantalla de planes no ofrece ningún medio de
 pago en vez de mandar al usuario a transferir a una cuenta vacía.
 
-**Confirmar un pago** (necesitas el token JWT de una cuenta que esté en
-`ADMIN_EMAILS`):
+**Confirmar un pago** se hace desde el panel: entra con una cuenta admin y
+abre **Yo → Administración**. La ruta `/admin` no está enlazada en ningún otro
+sitio y quien no tiene el rol acaba en Hoy.
+
+Por API, si hace falta (necesitas el token JWT de una cuenta con rol `admin`):
 
 ```bash
 API=https://fitapp-api.onrender.com
 TOKEN=$(curl -s -X POST $API/auth/login -H 'content-type: application/json' \
   -d '{"email":"tu@correo","password":"..."}' | jq -r .token)
 
-# 1. Ver la cola de pendientes.
-curl -s $API/admin/payments?status=pending -H "authorization: Bearer $TOKEN" | jq
+# 1. Ver la cola: sin `status` salen los pendientes y los que ya mandaron
+#    comprobante (`review`), que son los que esperan una decisión.
+curl -s $API/admin/payments -H "authorization: Bearer $TOKEN" | jq
 
 # 2. Confirmar. Activa Pro 30 días; pagar antes de vencer suma al vencimiento.
 curl -s -X POST $API/admin/payments/FIT-XXXXXX/confirm \

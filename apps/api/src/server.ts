@@ -8,6 +8,7 @@ import { registerRoutines } from "./routines.js";
 import { registerSessions } from "./sessions.js";
 import { registerRateLimit, trustProxyOption } from "./rateLimit.js";
 import { registerBilling } from "./billing/routes.js";
+import { registerAdmin } from "./admin.js";
 import { EXERCISE_TAGS, isExerciseTag } from "./equipmentTags.js";
 
 const app = Fastify({ logger: true, trustProxy: trustProxyOption() });
@@ -28,6 +29,7 @@ await registerAuth(app);
 registerRoutines(app);
 registerSessions(app);
 await registerBilling(app);
+registerAdmin(app);
 
 // Serve the dataset media (images/ and videos/) at /media/*
 // e.g. an exercise's image "images/0001-xxx.jpg" -> /media/images/0001-xxx.jpg
