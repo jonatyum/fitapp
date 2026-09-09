@@ -4,6 +4,7 @@ import "./styles.css";
 import { App } from "./App";
 import { I18nProvider } from "./i18n/I18nContext";
 import { AuthProvider } from "./auth/AuthContext";
+import { AuthGate } from "./auth/AuthGate";
 import { ThemeProvider } from "./theme";
 import { ToastProvider } from "./components/ui/Toast";
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <App />
+            <AuthGate>
+              <App />
+            </AuthGate>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

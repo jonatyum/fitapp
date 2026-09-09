@@ -124,3 +124,14 @@
 /* .empty.locked (Pro) enseña el valor en lugar de esconderlo: icono de marca
    y badge; los datos reales del usuario se muestran cuando existen. */
 .empty.locked .badge { align-self: center; }
+
+@media (min-width: 768px) {
+  /* La columna se centra en la pantalla: es lo que se espera de un acceso, y
+     no hay capturas de producto que enseñar al lado sin inventarlas. */
+  .gate-main {
+    justify-content: center;
+    min-height: calc(100dvh - var(--space-16));
+    padding-block: var(--space-8);
+  }
+  .gate-title { font-size: var(--text-3xl); }
+}

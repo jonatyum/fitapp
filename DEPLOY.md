@@ -92,7 +92,9 @@ resuélvelo antes de desplegar; no fuerces el deploy.
    |---|---|
    | `DATABASE_URL` | la pooled de Supabase (`?pgbouncer=true`) |
    | `DIRECT_URL` | la direct de Supabase (puerto 5432) |
-   | `GOOGLE_CLIENT_ID` | tu client id, o vacío para desactivar Google |
+   | `GOOGLE_CLIENT_ID` | tu client id; obligatorio si `CLOSED_BETA=1` |
+   | `CLOSED_BETA` | `1` cierra la app entera detrás de Google; vacío = flujo abierto |
+   | `ALLOWED_EMAILS` | correos admitidos durante la beta, separados por comas |
    | `CORS_ORIGIN` | `https://<tu-usuario>.github.io` (lo tendrás tras §3) |
    | `JWT_SECRET` | lo genera Render solo — no lo toques |
 4. **Deploy**. En cada arranque el contenedor: aplica las migraciones
@@ -138,17 +140,28 @@ git push -u origin main
 
 ---
 
-## 5. Google Sign-In (opcional)
+## 5. Google Sign-In (obligatorio con la beta cerrada)
 
-Si usas el botón de Google, en **Google Cloud Console → Credenciales → tu OAuth
-client → Orígenes autorizados de JavaScript** añade:
+Con `CLOSED_BETA=1` es la única forma de entrar, así que deja de ser opcional:
+sin `GOOGLE_CLIENT_ID` el API no arranca en producción.
+
+En **Google Cloud Console → Credenciales → tu OAuth client → Orígenes
+autorizados de JavaScript** añade el dominio desde el que se sirve el web:
 
 ```
-https://<tu-usuario>.github.io
+https://chamani.jonatyum.com
 ```
 
-(y mantén `http://localhost:5174` para desarrollo). No hace falta URI de
-redirección. Añádete como *usuario de prueba* en la pantalla de consentimiento.
+(y mantén `http://localhost:5174` para desarrollo). Sin barra final y sin ruta.
+No hace falta URI de redirección: el navegador recibe el *ID token* y la API lo
+verifica.
+
+En **Google Auth Platform → Audience**, con el estado de publicación en
+*Testing*, añade cada correo de la beta en *Test users* (tope de 100). Quien no
+esté en esa lista ve una pantalla de Google —`Error 403: access_denied`— que
+**nunca llega a la app**: el callback del botón no se dispara. Ese es el motivo
+de que `ALLOWED_EMAILS` exista además de la lista de Google; es la que produce
+un rechazo explicado dentro de Chamani.
 
 ---
 
@@ -213,6 +226,8 @@ Variables en Render (ver `.env.example`):
 | `QR_CONTACT` | **obligatoria** — a dónde manda el comprobante (WhatsApp) |
 | `QR_BANK_NAME`, `QR_ACCOUNT_NAME` | se muestran en las instrucciones |
 | `QR_IMAGE_URL` | URL de la imagen del QR (opcional) |
+| `CLOSED_BETA` | `1` deja la app entera detrás de una sesión de Google. Con la beta encendida y `ALLOWED_EMAILS` vacía, el arranque falla en producción en vez de servir una puerta que no abre |
+| `ALLOWED_EMAILS` | **la puerta**: quién puede entrar durante la beta, separados por comas. No confundir con `ADMIN_EMAILS`, que es una semilla de rol |
 | `ADMIN_EMAILS` | **semilla** de administradores, separados por comas: en cada arranque asciende esas cuentas al rol `admin`. A partir de ahí manda la columna `role` y los admins se gestionan desde el panel (`/admin`). Nunca degrada a nadie |
 
 Si faltan las dos obligatorias, la pantalla de planes no ofrece ningún medio de
@@ -281,7 +296,7 @@ forma silenciosa de regalar Pro.
 
 | Dónde | Variables |
 |---|---|
-| **Render** (backend) | `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `CORS_ORIGIN`, `TRUST_PROXY`, `ADMIN_EMAILS`, `QR_*` |
+| **Render** (backend) | `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `CORS_ORIGIN`, `TRUST_PROXY`, `ADMIN_EMAILS`, `CLOSED_BETA`, `ALLOWED_EMAILS`, `QR_*` |
 | **GitHub Pages** (build) | `VITE_API_URL` (variable), `VITE_BASE` (lo pone el workflow solo) |
 | **Supabase** | ninguna que configurar — solo copias las dos connection strings |
 

@@ -9,6 +9,8 @@ import { registerSessions } from "./sessions.js";
 import { registerRateLimit, trustProxyOption } from "./rateLimit.js";
 import { registerBilling } from "./billing/routes.js";
 import { registerAdmin } from "./admin.js";
+import { registerAccessGuard } from "./access.js";
+import { assertBetaConfig } from "./beta.js";
 import { EXERCISE_TAGS, isExerciseTag } from "./equipmentTags.js";
 
 const app = Fastify({ logger: true, trustProxy: trustProxyOption() });
@@ -24,6 +26,11 @@ await app.register(cors, { origin: corsOrigin });
 // Must come before any route is declared: it tags each route with its limit
 // as the route is registered.
 await registerRateLimit(app);
+
+// Igual que el rate limit, tiene que preceder a toda ruta: un hook de
+// instancia sólo alcanza a lo que se declara después.
+assertBetaConfig(app.log);
+registerAccessGuard(app);
 
 await registerAuth(app);
 registerRoutines(app);

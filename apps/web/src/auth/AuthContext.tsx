@@ -19,15 +19,20 @@ import {
   getToken,
   setToken,
 } from "../api";
+import type { AuthConfig } from "../api";
 import type { User } from "../types";
 import "./google"; // window.google typings
 
 interface AuthValue {
   user: User | null;
-  /** true until the stored token has been checked against the API */
+  /** true once both the stored token and the server config have been resolved */
   ready: boolean;
   /** non-null when the server has Google sign-in configured */
   googleClientId: string | null;
+  /** the whole app is behind sign-in and only invited accounts get in */
+  closedBeta: boolean;
+  /** the email + password form is offered at all */
+  passwordAuth: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
@@ -42,26 +47,32 @@ const AuthContext = createContext<AuthValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(false);
-  const [googleClientId, setGoogleClientId] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+  // Un fallo de red se trata como beta cerrada: sin API no hay nada que
+  // enseñar, y abrir la app por defecto sería el error caro de los dos.
+  const [config, setConfig] = useState<AuthConfig | null>(null);
 
   useEffect(() => {
     apiAuthConfig()
-      .then((c) => setGoogleClientId(c.googleClientId))
-      .catch(() => setGoogleClientId(null));
+      .then(setConfig)
+      .catch(() => setConfig({ googleClientId: null, closedBeta: true, passwordAuth: false }));
   }, []);
 
   // Resume the session from the stored token, if it is still valid.
   useEffect(() => {
     if (!getToken()) {
-      setReady(true);
+      setSessionReady(true);
       return;
     }
     apiMe()
       .then(setUser)
       .catch(() => setToken(null))
-      .finally(() => setReady(true));
+      .finally(() => setSessionReady(true));
   }, []);
+
+  // Las dos respuestas deciden juntas qué se pinta: dar por lista sólo la
+  // sesión enseñaría la pantalla de acceso sin saber aún cómo se entra.
+  const ready = sessionReady && config !== null;
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await apiLogin(email, password);
@@ -113,7 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       ready,
-      googleClientId,
+      googleClientId: config?.googleClientId ?? null,
+      closedBeta: config?.closedBeta ?? true,
+      passwordAuth: config?.passwordAuth ?? false,
       login,
       register,
       loginWithGoogle,
@@ -125,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [
       user,
       ready,
-      googleClientId,
+      config,
       login,
       register,
       loginWithGoogle,

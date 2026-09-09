@@ -85,9 +85,30 @@ Detalles de comportamiento:
 - Se rechazan las cuentas de Google sin correo verificado.
 - El script de Google solo se carga cuando el usuario abre el diálogo de acceso.
 
+## Beta cerrada
+
+Con `CLOSED_BETA=1` la app entera queda detrás de una sesión de Google y solo
+entran los correos de `ALLOWED_EMAILS`. Se cierra todo salvo `/health`,
+`/auth/config`, `/auth/google`, el webhook de cobro y `/media/*` — este último
+porque un `<img src>` no manda cabecera de autorización y el catálogo se
+quedaría sin imágenes.
+
+La lista de *usuarios de prueba* de Google Cloud no basta como autorización:
+publicar la pantalla de consentimiento es un botón de una consola y abriría el
+registro a cualquier cuenta de Google. Por eso la puerta es `ALLOWED_EMAILS`, y
+se comprueba en cada entrada, no solo al crear la cuenta.
+
+Mientras dura, el correo y la contraseña quedan desactivados (`403
+password_login_disabled`); el código sigue en su sitio y vuelve al apagar el
+interruptor, igual que el camino de activación sin cuenta.
+
+Un aviso: los tokens duran 30 días y no se revocan, así que sacar a alguien de
+la lista le cierra la puerta en el siguiente acceso, no en el acto. Para
+expulsar a alguien ya, hay que borrar su cuenta.
+
 ## Endpoints de la API
 
-**Catálogo** (público)
+**Catálogo** (público con la beta apagada; con `CLOSED_BETA=1` exige sesión)
 
 - `GET /health`
 - `GET /meta` — valores para filtros (bodyParts, equipment, targets)

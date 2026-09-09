@@ -21,7 +21,15 @@ services:
       - key: JWT_SECRET
         generateValue: true
       # OAuth client id for "Sign in with Google" (leave blank to disable).
+      # Required while CLOSED_BETA is on: it is the only way in.
       - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Closed beta: locks the app behind sign-in. Empty = open flow.
+      - key: CLOSED_BETA
+        sync: false
+      # Comma-separated emails allowed in while CLOSED_BETA is on. The API
+      # refuses to boot in production if it is empty with the beta on.
+      - key: ALLOWED_EMAILS
         sync: false
       # Front-end origin(s) allowed by CORS, e.g. https://<user>.github.io
       - key: CORS_ORIGIN

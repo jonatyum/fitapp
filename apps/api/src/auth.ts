@@ -3,6 +3,7 @@ import fastifyJwt from "@fastify/jwt";
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "./db.js";
+import { CLOSED_BETA, isAllowedEmail } from "./beta.js";
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
@@ -96,12 +97,22 @@ export async function registerAuth(app: FastifyInstance) {
     user: publicUser(u),
   });
 
-  /** What sign-in methods this deployment offers. */
-  app.get("/auth/config", async () => ({ googleClientId: GOOGLE_CLIENT_ID }));
+  /**
+   * What sign-in methods this deployment offers. Es también el interruptor de
+   * la beta: el cliente lo lee al arrancar, así que abrir o cerrar el grifo no
+   * pide reconstruir ni volver a desplegar el web.
+   */
+  app.get("/auth/config", async () => ({
+    googleClientId: GOOGLE_CLIENT_ID,
+    closedBeta: CLOSED_BETA,
+    passwordAuth: !CLOSED_BETA,
+  }));
 
   app.post<{ Body: { email?: string; password?: string; name?: string } }>(
     "/auth/register",
     async (req, reply) => {
+      if (CLOSED_BETA) return reply.code(403).send({ error: "password_login_disabled" });
+
       const email = (req.body?.email ?? "").trim().toLowerCase();
       const password = req.body?.password ?? "";
       const name = (req.body?.name ?? "").trim();
@@ -123,6 +134,8 @@ export async function registerAuth(app: FastifyInstance) {
   app.post<{ Body: { email?: string; password?: string } }>(
     "/auth/login",
     async (req, reply) => {
+      if (CLOSED_BETA) return reply.code(403).send({ error: "password_login_disabled" });
+
       const email = (req.body?.email ?? "").trim().toLowerCase();
       const password = req.body?.password ?? "";
 
@@ -166,6 +179,14 @@ export async function registerAuth(app: FastifyInstance) {
 
     const googleId = payload.sub;
     const email = payload.email.toLowerCase();
+
+    // Se comprueba en cada entrada, no sólo al crear la cuenta: así quitar a
+    // alguien de ALLOWED_EMAILS le cierra la puerta en el siguiente acceso.
+    if (!isAllowedEmail(email)) {
+      req.log.info({ email }, "sign-in rejected: not on the closed-beta list");
+      return reply.code(403).send({ error: "email_not_allowed" });
+    }
+
     const avatarUrl = payload.picture ?? null;
     const name = payload.name || payload.given_name || email.split("@")[0];
 
@@ -213,6 +234,10 @@ export async function registerAuth(app: FastifyInstance) {
     "/auth/password",
     { preHandler: requireAuth },
     async (req, reply) => {
+      // Con la beta cerrada, la contraseña no abre ninguna puerta: crearla o
+      // cambiarla sería fabricar una credencial muerta.
+      if (CLOSED_BETA) return reply.code(403).send({ error: "password_login_disabled" });
+
       const user = await prisma.user.findUnique({ where: { id: userId(req) } });
       if (!user) return reply.code(401).send({ error: "unauthorized" });
 
@@ -251,7 +276,10 @@ export async function registerAuth(app: FastifyInstance) {
       const user = await prisma.user.findUnique({ where: { id: userId(req) } });
       if (!user) return reply.code(401).send({ error: "unauthorized" });
 
-      if (user.passwordHash) {
+      // El slice 5 exige la contraseña siempre que exista. Con la beta cerrada
+      // se entra sólo por Google, así que quien tenga una de antes puede no
+      // recordarla: ahí lo que demuestra intención es escribir el correo.
+      if (user.passwordHash && !CLOSED_BETA) {
         const password = req.body?.password ?? "";
         if (!(await bcrypt.compare(password, user.passwordHash))) {
           return reply.code(401).send({ error: "bad_password" });
