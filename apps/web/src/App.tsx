@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchExercises, fetchMeta, fetchMuscleCounts } from "./api";
+import { fetchMeta, fetchMuscleCounts } from "./api";
 import type { UIKey } from "./i18n/ui";
 import type { Exercise, Meta, Routine } from "./types";
 import { useI18n } from "./i18n/I18nContext";
 import { navigate, usePath } from "./router";
 import { PATHS, VIEW_BY_PATH, type View } from "./routes";
 import { useTheme } from "./theme";
+import { useExerciseList } from "./useExerciseList";
 import { useAuth } from "./auth/AuthContext";
 import { LanguageMenu } from "./components/LanguageMenu";
 import { AccountMenu } from "./components/AccountMenu";
@@ -42,16 +43,12 @@ const NAV: { view: View; label: UIKey; icon: IconName }[] = [
 const TAB_OF: Partial<Record<View, View>> = { wizard: "routine", workout: "routine" };
 
 export function App() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { theme, toggle } = useTheme();
   const { user, ready } = useAuth();
 
   const [meta, setMeta] = useState<Meta | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [items, setItems] = useState<Exercise[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<Exercise | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   /** lista o cuerpo: dos pieles del mismo catálogo */
@@ -91,25 +88,12 @@ export function App() {
     setFilters((f) => ({ ...f, ...patch }));
 
   useEffect(() => {
-    fetchMeta().then(setMeta).catch(() => setFailed(true));
+    fetchMeta().then(setMeta).catch(() => {});
     fetchMuscleCounts().then(setCounts).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (view !== "exercises") return;
-    setLoading(true);
-    const timer = setTimeout(() => {
-      fetchExercises({ q, ...filters, limit: 60 })
-        .then((res) => {
-          setItems(res.items);
-          setTotal(res.total);
-          setFailed(false);
-        })
-        .catch(() => setFailed(true))
-        .finally(() => setLoading(false));
-    }, 220);
-    return () => clearTimeout(timer);
-  }, [q, filters, view]);
+  const { items, total, loading, loadingMore, failed, hasMore, loadMore } =
+    useExerciseList(q, filters, view === "exercises");
 
   const selectMuscle = (keys: string[]) => {
     // The home/no-gym tag survives: picking a muscle off the map is narrowing
@@ -208,6 +192,11 @@ export function App() {
           meta={meta}
           filters={filters}
           set={setFilter}
+          q={q}
+          onQ={(v) => {
+            setQ(v);
+            browse();
+          }}
           total={total}
           loading={loading}
           mode={mode}
@@ -240,6 +229,25 @@ export function App() {
               </div>
             ) : (
               <MuscleMap activeMuscle={filters.muscle} counts={counts} onSelect={selectMuscle} />
+            )}
+
+            {/* Paginación explícita, no scroll infinito: el catálogo se recorre
+                con el pulgar y hace falta poder parar, volver y saber cuánto
+                queda. */}
+            {mode === "list" && hasMore && (
+              <div className="grid-more">
+                <button
+                  className={`btn secondary lg${loadingMore ? " loading" : ""}`}
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore && <span className="btn-spinner" aria-hidden="true" />}
+                  <span>{t("loadMore")}</span>
+                </button>
+                <p className="hint" aria-live="polite">
+                  {t("showingOf", { n: items.length, total: total.toLocaleString(lang) })}
+                </p>
+              </div>
             )}
           </div>
         )}

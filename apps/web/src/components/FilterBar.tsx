@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useI18n } from "../i18n/I18nContext";
 import type { UIKey } from "../i18n/ui";
 import type { Meta } from "../types";
@@ -24,6 +25,8 @@ export function FilterBar({
   meta,
   filters,
   set,
+  q,
+  onQ,
   total,
   loading,
   mode,
@@ -32,19 +35,41 @@ export function FilterBar({
   meta: Meta | null;
   filters: FilterState;
   set: (patch: Partial<FilterState>) => void;
+  q: string;
+  onQ: (q: string) => void;
   total: number;
   loading: boolean;
   /** el mapa muscular es otro filtro, no otro destino: se conmuta desde aquí */
   mode: "list" | "body";
   onMode: (mode: "list" | "body") => void;
 }) {
-  const { t, tv } = useI18n();
+  const { t, tv, lang } = useI18n();
+  const [open, setOpen] = useState(false);
   const { bodyPart, target, equipment, muscle, tag } = filters;
-  const hasFilters = !!(bodyPart || target || equipment || muscle || tag);
+  const active = [bodyPart, target, equipment, muscle, tag].filter(Boolean);
+  const hasFilters = active.length > 0;
+  // Desplegada, la barra ocupaba 338px de una pantalla de 844 y dejaba ver
+  // ejercicio y medio. Sobre el cuerpo no hay nada que plegar: la figura es el
+  // selector.
+  const collapsed = mode === "list" && !open;
 
   return (
-    <div className="filterbar">
+    <div className="filterbar" data-filters={collapsed ? "closed" : "open"}>
       <div className="filterbar-row">
+        {/* El mismo componente que en la cabecera, y sólo uno visible a la vez:
+            por debajo de 480 la cabecera no tiene sitio, y buscar un ejercicio
+            por nombre entre 1.324 es justo lo que se hace desde el teléfono. */}
+        <div className="searchbox">
+          <Icon name="search" size={18} />
+          <input
+            type="search"
+            aria-label={t("searchPlaceholder")}
+            placeholder={t("searchPlaceholder")}
+            value={q}
+            onChange={(e) => onQ(e.target.value)}
+          />
+        </div>
+
         <div className="filterbar-modes">
           <div className="viewswitch" role="group" aria-label={t("viewMode")}>
             <button
@@ -64,6 +89,20 @@ export function FilterBar({
               {t("viewBody")}
             </button>
           </div>
+
+          {mode === "list" && (
+            <button
+              className="btn secondary filterbar-toggle"
+              aria-expanded={open}
+              onClick={() => setOpen((o) => !o)}
+            >
+              <Icon name="sliders" size={18} />
+              {t("filters")}
+              {/* El recuento es lo que impide que un filtro quede escondido y
+                  olvidado detrás del botón. */}
+              {hasFilters && <span className="badge brand">{active.length}</span>}
+            </button>
+          )}
 
           <div className="chip-row">
             {TAGS.map((x) => {
@@ -139,7 +178,7 @@ export function FilterBar({
       <div className="filterbar-meta">
         {mode === "list" && (
           <span className="count">
-            {loading ? t("loading") : t("results", { n: total.toLocaleString() })}
+            {loading ? t("loading") : t("results", { n: total.toLocaleString(lang) })}
           </span>
         )}
 

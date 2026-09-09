@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   RESPONSIVE — mobile-first, siempre min-width
+   base 0–479 · sm 480 · md 768 · lg 1024 · xl 1440
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 480px) {
+  :root { --gutter: var(--space-5); }
+
+  /* Por debajo de 480 no cabe junto al lockup; la barra de filtros cubre la
+     búsqueda a ese ancho. */
+  .topbar .searchbox { display: block; }
+  .filterbar .searchbox { display: none; }
+
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .wizard-actions { flex-direction: row; flex-wrap: wrap; }
+  .wizard-actions .btn.primary { margin-left: auto; }
+  .logger-actions .btn { flex: 0 0 auto; }
+  .plan-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
+
+@media (min-width: 768px) {
+  :root { --gutter: var(--space-6); }
+
+  .app-main { padding-block: var(--space-6) var(--space-12); }
+
+  .lang-name { display: inline; }
+
+  .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4); }
+
+  .card-body { padding: var(--space-5); }
+
+  /* Diálogo centrado en lugar de bottom sheet. */
+  .overlay { align-items: center; padding: var(--space-4); }
+  .sheet,
+  .modal {
+    width: min(560px, calc(100vw - var(--space-8)));
+    max-height: min(88dvh, 760px);
+    border-radius: var(--radius-xl);
+    padding-bottom: 0;
+    animation: modal-in var(--duration-normal) var(--ease-out);
+  }
+  .modal.wide { width: min(880px, calc(100vw - var(--space-8))); }
+  @keyframes modal-in { from { opacity: 0; transform: scale(0.96); } }
+  .sheet-grabber { display: none; }
+  .modal-footer { flex-direction: row; justify-content: flex-end; padding-bottom: var(--space-5); }
+
+  .toast-stack {
+    inset-inline: auto var(--space-6);
+    bottom: var(--space-6);
+    width: 380px;
+  }
+
+  .choice-grid { grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
+  .choice.big { flex: 0 0 auto; }
+
+  .preview-head { flex-direction: row; align-items: flex-end; }
+  .preview-actions .btn { flex: 0 0 auto; }
+
+  .routine-head,
+  .logger-head { flex-direction: row; align-items: flex-start; justify-content: space-between; }
+  .routine-head > div,
+  .logger-head > div { min-width: 0; }
+  .daycard-head { flex-direction: row; align-items: flex-start; justify-content: space-between; }
+  .daycard-head > div { min-width: 0; }
+  .daycard-head { padding: var(--space-4) var(--space-5); }
+  .exrow { padding-inline: var(--space-5); }
+
+  .panel { padding: var(--space-5); }
+  .panel-row { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .chart { gap: var(--space-2); }
+
+  .exercise-detail { flex-direction: row; gap: var(--space-6); }
+  .exercise-media { flex: 0 0 300px; max-height: none; align-self: flex-start; }
+  .exercise-media img { max-height: none; }
+  .exercise-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+}
+
+@media (min-width: 1024px) {
+  :root { --gutter: var(--space-8); }
+
+  /* La barra pasa a una sola línea aquí, no en 768: con el conmutador, los dos
+     atajos y los dos desplegables en la misma fila, a 768 el scroller de partes
+     del cuerpo se quedaba en 11px de ancho y las pills no se veían.
+     Y como aquí ya se ve todo a la vez, no hay nada que plegar. */
+  .filterbar-toggle { display: none; }
+  .filterbar[data-filters="closed"] .chip-row,
+  .filterbar[data-filters="closed"] .pill-scroll,
+  .filterbar[data-filters="closed"] .filterbar-dropdowns { display: flex; }
+
+  .filterbar-row { flex-direction: row; align-items: center; gap: var(--space-4); }
+  .pill-scroll { flex: 1; min-width: 0; }
+  .filterbar-dropdowns { flex: 0 0 auto; }
+  .dropdown { flex: 0 0 auto; }
+  .dropdown-menu { left: auto; right: 0; }
+
+  /* La navegación sube al header y la tabbar desaparece. Hasta 1024 no cabe:
+     las cinco pestañas con texto dejaban al buscador en 0px de ancho y
+     empujaban el tema y la cuenta fuera de la pantalla. */
+  .tabbar { display: none; }
+  .navtabs { display: flex; }
+
+  .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .t-h1 { font-size: var(--text-4xl); }
+}
+
+/* Punto de la i del wordmark: cuadrado sólido de marca. */
+.brand-i { position: relative; display: inline-block; user-select: none; }
+.brand-i::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -0.30em;
+  width: 0.17em;
+  height: 0.17em;
+  transform: translateX(-50%);
+  background: var(--brand);
+}
+
+/* Variantes de estado vacío. Las tres SIEMPRE ofrecen una salida. */
+.empty.first-use  { /* "aún no hay nada, empieza aquí" — el CTA crea */ }
+.empty.no-results { /* "no encontramos X" — el CTA limpia los filtros */ }
+.empty.no-results .empty-icon { color: var(--text-3); }
+/* .empty.locked (Pro) enseña el valor en lugar de esconderlo: icono de marca
+   y badge; los datos reales del usuario se muestran cuando existen. */
+.empty.locked .badge { align-self: center; }
