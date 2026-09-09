@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../db.js";
 import { userId } from "../auth.js";
-import { FREE, PRO, planByCode } from "./plans.js";
+import { FREE, isProPlan, planByCode } from "./plans.js";
 
 /** No I/O/0/1: a reference gets read out loud over the phone and WhatsApp. */
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -46,7 +46,7 @@ export async function entitlementFor(uid: string): Promise<Entitlement> {
   return {
     planCode: status === "active" ? sub.planCode : FREE,
     status,
-    isPro: status === "active" && sub.planCode === PRO,
+    isPro: status === "active" && isProPlan(sub.planCode),
     startedAt: sub.startedAt.toISOString(),
     expiresAt: sub.expiresAt?.toISOString() ?? null,
   };
@@ -56,9 +56,9 @@ export async function entitlementFor(uid: string): Promise<Entitlement> {
  * Mark a payment paid and start or extend the subscription, atomically.
  *
  * Idempotent by construction: the status is moved with a conditional update
- * that only matches a `pending` row, so a redelivered webhook or a
- * double-clicked admin button changes nothing the second time and cannot grant
- * two periods.
+ * that only matches a row still waiting to be paid, so a redelivered webhook
+ * or a double-clicked admin button changes nothing the second time and cannot
+ * grant two periods.
  *
  * Renewal stacks from whichever is later — now, or the end of the period
  * already paid for — so paying early never burns the remaining days.
@@ -69,7 +69,7 @@ export async function activateFromPayment(
 ): Promise<{ activated: boolean }> {
   return prisma.$transaction(async (tx) => {
     const { count } = await tx.payment.updateMany({
-      where: { id: paymentId, status: "pending" },
+      where: { id: paymentId, status: { in: ["pending", "review"] } },
       data: { status: "paid", paidAt: new Date(), confirmedBy: opts.confirmedBy ?? null },
     });
     if (count === 0) return { activated: false };
@@ -80,10 +80,16 @@ export async function activateFromPayment(
 
     const current = await tx.subscription.findUnique({ where: { userId: payment.userId } });
     const now = new Date();
-    const base =
-      current?.expiresAt && current.expiresAt > now && current.planCode === payment.planCode
+    // Any Pro length stacks on any other: paying for a year while a month is
+    // still running has to add to it, not throw the paid days away.
+    const runningUntil =
+      current?.expiresAt &&
+      current.expiresAt > now &&
+      isProPlan(current.planCode) &&
+      isProPlan(payment.planCode)
         ? current.expiresAt
-        : now;
+        : null;
+    const base = runningUntil ?? now;
     const expiresAt =
       plan.periodDays > 0
         ? new Date(base.getTime() + plan.periodDays * 24 * 60 * 60 * 1000)
