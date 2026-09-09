@@ -5,7 +5,14 @@ import rateLimit from "@fastify/rate-limit";
  * Endpoints where an attacker can guess credentials or spam account creation.
  * They get a much tighter budget than the rest of the API.
  */
-const AUTH_ROUTES = new Set(["/auth/login", "/auth/register", "/auth/google"]);
+const AUTH_ROUTES = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/google",
+  // Ambas comparan una contraseña, así que se adivinan igual que un login.
+  "/auth/password",
+  "/auth/account",
+]);
 
 /** Static media (/media/*): one page of exercises pulls dozens of images. */
 const MEDIA_PREFIX = "/media/";

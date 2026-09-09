@@ -25,6 +25,9 @@ export const userId = (req: FastifyRequest) => req.user.sub;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** El nombre se enseña en cabeceras y saludos: sin tope, una vista se rompe. */
+const NAME_MAX = 60;
+
 // Google sign-in is optional: without GOOGLE_CLIENT_ID the endpoint is disabled
 // and the web app hides the button.
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID?.trim() || null;
@@ -36,6 +39,7 @@ interface PublicUser {
   name: string;
   avatarUrl: string | null;
   role: string;
+  passwordHash: string | null;
 }
 
 /** Published in this repository, so it can only ever sign local sessions. */
@@ -82,6 +86,9 @@ export async function registerAuth(app: FastifyInstance) {
     // Pista para la interfaz: decide si se enseña la entrada de administración.
     // La autorización de verdad la hace el servidor leyendo la columna.
     role: u.role,
+    // Una cuenta creada con Google no tiene contraseña: los ajustes ofrecen
+    // crearla en vez de pedir la actual, que no existe.
+    hasPassword: u.passwordHash !== null,
   });
 
   const session = (u: PublicUser) => ({
@@ -184,4 +191,80 @@ export async function registerAuth(app: FastifyInstance) {
     if (!user) return reply.code(401).send({ error: "unauthorized" });
     return publicUser(user);
   });
+
+  /**
+   * El nombre es lo único editable del perfil: cambiar el correo exige
+   * verificarlo, y sin envío de correo no hay manera de hacerlo bien.
+   */
+  app.patch<{ Body: { name?: string } }>(
+    "/auth/me",
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const name = (req.body?.name ?? "").trim();
+      if (!name) return reply.code(400).send({ error: "missing_name" });
+      if (name.length > NAME_MAX) return reply.code(400).send({ error: "name_too_long" });
+
+      const user = await prisma.user.update({ where: { id: userId(req) }, data: { name } });
+      return publicUser(user);
+    },
+  );
+
+  app.post<{ Body: { currentPassword?: string; newPassword?: string } }>(
+    "/auth/password",
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const user = await prisma.user.findUnique({ where: { id: userId(req) } });
+      if (!user) return reply.code(401).send({ error: "unauthorized" });
+
+      const newPassword = req.body?.newPassword ?? "";
+      if (newPassword.length < 8) return reply.code(400).send({ error: "weak_password" });
+
+      // Una cuenta de Google no tiene contraseña que pedir: aquí se crea la
+      // primera, y quien la crea ya ha demostrado ser el dueño de la sesión.
+      if (user.passwordHash) {
+        const current = req.body?.currentPassword ?? "";
+        if (!(await bcrypt.compare(current, user.passwordHash))) {
+          return reply.code(401).send({ error: "bad_password" });
+        }
+      }
+
+      const updated = await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+      });
+      return publicUser(updated);
+    },
+  );
+
+  /**
+   * Borrado de cuenta. Los planes, las sesiones y la suscripción caen con ella
+   * en cascada; los pagos no: su FK quedó anulable en el slice 4 justamente
+   * para que el rastro contable sobreviva a la cuenta que lo generó.
+   *
+   * Los tokens ya emitidos duran 30 días y no se revocan, pero dejan de servir
+   * solos: cada ruta autenticada busca al usuario y ya no está.
+   */
+  app.delete<{ Body: { password?: string; confirm?: string } }>(
+    "/auth/account",
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const user = await prisma.user.findUnique({ where: { id: userId(req) } });
+      if (!user) return reply.code(401).send({ error: "unauthorized" });
+
+      if (user.passwordHash) {
+        const password = req.body?.password ?? "";
+        if (!(await bcrypt.compare(password, user.passwordHash))) {
+          return reply.code(401).send({ error: "bad_password" });
+        }
+      } else if ((req.body?.confirm ?? "").trim().toLowerCase() !== user.email) {
+        // Sin contraseña que comprobar, lo que demuestra intención es escribir
+        // la dirección de la cuenta.
+        return reply.code(400).send({ error: "confirm_mismatch" });
+      }
+
+      await prisma.user.delete({ where: { id: user.id } });
+      req.log.info({ account: user.id }, "account deleted");
+      return reply.code(204).send();
+    },
+  );
 }

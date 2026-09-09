@@ -472,13 +472,6 @@ h1, h2, h3, h4 { text-wrap: balance; }
 }
 .btn > svg { flex: 0 0 auto; }
 
-.btn:disabled,
-.btn[aria-disabled="true"] {
-  background: var(--surface-3);
-  color: var(--text-disabled);
-  border-color: var(--border);
-  cursor: not-allowed;
-}
 .btn:not(:disabled):active { transform: scale(0.98); }
 
 .btn.primary { background: var(--brand); color: var(--text-on-brand); }
@@ -508,6 +501,17 @@ h1, h2, h3, h4 { text-wrap: balance; }
   background: var(--brand-soft);
   color: var(--brand-text);
   border-color: var(--brand-soft-border);
+}
+
+/* Después de las variantes a propósito: `.btn.primary` y `.btn:disabled` tienen
+   la misma especificidad, así que declarado antes perdía y un botón inutilizado
+   seguía pintándose como pulsable. */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--surface-3);
+  color: var(--text-disabled);
+  border-color: var(--border);
+  cursor: not-allowed;
 }
 
 @media (hover: hover) {
@@ -748,6 +752,7 @@ h1, h2, h3, h4 { text-wrap: balance; }
   min-height: var(--touch-min);
   cursor: pointer;
 }
+.toggle.block { display: flex; width: 100%; }
 .toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .toggle-label { font-size: var(--text-base); }
 .toggle-track {
@@ -1846,6 +1851,26 @@ h1, h2, h3, h4 { text-wrap: balance; }
   .linkrow:hover { background: var(--surface-2); }
 }
 .linkrow:active { background: var(--surface-2); }
+
+/* ── Ajustes ───────────────────────────────────────────────────────────── */
+.settings { display: flex; flex-direction: column; gap: var(--space-4); }
+.settings > h1 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+.settings .panel { display: flex; flex-direction: column; gap: var(--space-4); }
+.settings-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+}
+.settings-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
 
 /* ── Asistente de rutina ───────────────────────────────────────────────── */
 .wizard { display: flex; flex-direction: column; gap: var(--space-6); }

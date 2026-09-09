@@ -6,6 +6,7 @@ import { catalog, type CatalogKey } from "./ui/catalog";
 import { common, type CommonKey } from "./ui/common";
 import { progress, type ProgressKey } from "./ui/progress";
 import { routine, type RoutineKey } from "./ui/routine";
+import { settings, type SettingsKey } from "./ui/settings";
 import { today, type TodayKey } from "./ui/today";
 import { workout, type WorkoutKey } from "./ui/workout";
 
@@ -27,6 +28,7 @@ export type UIKey =
   | ProgressKey
   | BillingKey
   | TodayKey
+  | SettingsKey
   | AdminKey;
 
 export const UI: Record<Lang, Record<UIKey, string>> = {
@@ -39,6 +41,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     ...progress.en,
     ...billing.en,
     ...today.en,
+    ...settings.en,
     ...admin.en,
   },
   es: {
@@ -50,6 +53,7 @@ export const UI: Record<Lang, Record<UIKey, string>> = {
     ...progress.es,
     ...billing.es,
     ...today.es,
+    ...settings.es,
     ...admin.es,
   },
 };

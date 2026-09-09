@@ -18,6 +18,7 @@ import { AuthModal } from "./components/AuthModal";
 import { MeView } from "./components/MeView";
 import { RoutineView } from "./components/RoutineView";
 import { RoutineWizard } from "./components/RoutineWizard";
+import { SettingsView } from "./components/SettingsView";
 import { TodayView } from "./components/TodayView";
 import { WorkoutLogger } from "./components/WorkoutLogger";
 import { ProgressView } from "./components/ProgressView";
@@ -68,6 +69,8 @@ export function App() {
     if (!VIEW_BY_PATH[path]) navigate(PATHS.today, { replace: true });
     else if (view === "workout" && !workout) navigate(PATHS.routine, { replace: true });
     else if (view === "routine" && ready && !user) navigate(PATHS.wizard, { replace: true });
+    // Los ajustes son de una cuenta: sin sesión, "Yo" es donde se crea.
+    else if (view === "settings" && ready && !user) navigate(PATHS.me, { replace: true });
     // /admin no está enlazada en ningún sitio salvo en "Yo" y sólo para quien
     // tiene el rol; entrar a mano sin él devuelve a Hoy. La autorización de
     // verdad la hace el API en cada petición.
@@ -281,6 +284,12 @@ export function App() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {view === "settings" && (
+          <div className="container narrow">
+            <SettingsView />
           </div>
         )}
 

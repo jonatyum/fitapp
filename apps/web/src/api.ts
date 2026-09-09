@@ -119,6 +119,18 @@ export const apiLogin = (email: string, password: string) =>
 
 export const apiMe = () => request<User>("/auth/me");
 
+export const apiUpdateProfile = (name: string) =>
+  request<User>("/auth/me", { method: "PATCH", body: JSON.stringify({ name }) });
+
+/** Sin `currentPassword` en las cuentas de Google: es la primera que tienen. */
+export const apiChangePassword = (body: {
+  currentPassword?: string;
+  newPassword: string;
+}) => request<User>("/auth/password", { method: "POST", body: JSON.stringify(body) });
+
+export const apiDeleteAccount = (body: { password?: string; confirm?: string }) =>
+  request<void>("/auth/account", { method: "DELETE", body: JSON.stringify(body) });
+
 /** Which sign-in methods this deployment offers. */
 export const apiAuthConfig = () =>
   request<{ googleClientId: string | null }>("/auth/config");
