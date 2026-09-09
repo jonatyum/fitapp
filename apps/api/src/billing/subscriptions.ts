@@ -74,7 +74,7 @@ export async function entitlementFor(uid: string): Promise<Entitlement> {
 export async function activateFromPayment(
   paymentId: string,
   opts: { confirmedBy?: string } = {},
-): Promise<{ activated: boolean }> {
+): Promise<{ activated: false } | { activated: true; userId: string }> {
   return prisma.$transaction(async (tx) => {
     const { count } = await tx.payment.updateMany({
       where: { id: paymentId, status: { in: ["pending", "review"] } },
@@ -85,12 +85,13 @@ export async function activateFromPayment(
     const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
     // La cuenta se borró después de pagar: el pago queda como registro
     // contable, pero no hay a quién darle el periodo.
-    if (!payment.userId) return { activated: false };
+    const uid = payment.userId;
+    if (!uid) return { activated: false };
 
     const plan = planByCode(payment.planCode);
     if (!plan) throw new Error(`unknown plan on payment ${payment.reference}`);
 
-    const current = await tx.subscription.findUnique({ where: { userId: payment.userId } });
+    const current = await tx.subscription.findUnique({ where: { userId: uid } });
     const now = new Date();
     // Any Pro length stacks on any other: paying for a year while a month is
     // still running has to add to it, not throw the paid days away.
@@ -108,9 +109,9 @@ export async function activateFromPayment(
         : null;
 
     await tx.subscription.upsert({
-      where: { userId: payment.userId },
+      where: { userId: uid },
       create: {
-        userId: payment.userId,
+        userId: uid,
         planCode: payment.planCode,
         status: "active",
         provider: payment.provider,
@@ -125,7 +126,7 @@ export async function activateFromPayment(
       },
     });
 
-    return { activated: true };
+    return { activated: true, userId: uid };
   });
 }
 
