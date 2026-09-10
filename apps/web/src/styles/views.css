@@ -872,3 +872,4 @@
   color: var(--text-3);
   font-size: var(--text-xs);
 }
+.gate-note a { color: inherit; }

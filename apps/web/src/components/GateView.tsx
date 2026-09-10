@@ -125,7 +125,12 @@ export function GateView() {
           ))}
         </ul>
 
-        <p className="gate-note">{t("gateDataNote")}</p>
+        <p className="gate-note">
+          {t("gateDataNote")}{" "}
+          {/* Página estática, fuera del router: tiene que poder leerse sin
+              haber entrado, que es justo lo que la puerta impide. */}
+          <a href="/privacy.html">{t("privacyLink")}</a>
+        </p>
       </main>
 
       {helpOpen && (
