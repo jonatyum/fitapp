@@ -84,6 +84,12 @@ app.get<{ Querystring: ExerciseQuery }>("/exercises", async (req) => {
   // shortcut, not something a saved routine depends on.
   const tagEquipment = isExerciseTag(tag) ? EXERCISE_TAGS[tag] : null;
 
+  // Accepts a comma-separated list of synonyms (the dataset uses e.g. "quads"
+  // as target but "quadriceps" as secondary).
+  const muscleList = muscle
+    ? muscle.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
   const where: Prisma.ExerciseWhereInput = {
     ...(bodyPart ? { bodyPart } : {}),
     ...(equipment ? { equipment } : {}),
@@ -92,29 +98,87 @@ app.get<{ Querystring: ExerciseQuery }>("/exercises", async (req) => {
     ...(tagEquipment ? { AND: [{ equipment: { in: [...tagEquipment] } }] } : {}),
     ...(target ? { target } : {}),
     // `muscle` matches the primary target OR any secondary muscle — used by the
-    // interactive muscle map. Accepts a comma-separated list of synonyms
-    // (the dataset uses e.g. "quads" as target but "quadriceps" as secondary).
-    ...(muscle
-      ? (() => {
-          const list = muscle.split(",").map((s) => s.trim()).filter(Boolean);
-          return {
-            OR: [
-              { target: { in: list } },
-              { secondaryMuscles: { hasSome: list } },
-            ],
-          };
-        })()
+    // interactive muscle map.
+    ...(muscleList.length
+      ? {
+          OR: [
+            { target: { in: muscleList } },
+            { secondaryMuscles: { hasSome: muscleList } },
+          ],
+        }
       : {}),
     ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
   };
 
   const [total, items] = await Promise.all([
     prisma.exercise.count({ where }),
-    prisma.exercise.findMany({ where, orderBy: { id: "asc" }, take: limit, skip: offset }),
+    listExercises(where, muscleList.length ? muscleList : target ? [target] : [], limit, offset),
   ]);
 
   return { total, limit, offset, items };
 });
+
+// Del más directo al menos directo para un mismo músculo primario
+// (data/primary-muscles.json). `id` cierra el orden porque hay nombres
+// repetidos y la paginación por offset necesita un orden total.
+const BY_WEIGHT: Prisma.ExerciseOrderByWithRelationInput[] = [
+  { primaryScore: { sort: "desc", nulls: "last" } },
+  { name: "asc" },
+  { id: "asc" },
+];
+const BY_MUSCLE: Prisma.ExerciseOrderByWithRelationInput[] = [
+  { primaryMuscle: { sort: "asc", nulls: "last" } },
+  ...BY_WEIGHT,
+];
+
+/**
+ * Una página del catálogo, agrupada por el músculo que cada ejercicio entrena
+ * de verdad y ordenada dentro del grupo por lo directo que es para él. Antes
+ * era el orden del dataset (`id asc`), que dejaba el estiramiento de isquios
+ * entre los ejercicios de isquios.
+ *
+ * Si se filtró por un músculo, ese grupo va primero: con el orden alfabético a
+ * secas, buscar glúteo abría la lista con los abductores. Son dos consultas
+ * porque el criterio es "coincide con el filtro", y eso en SQL es un ORDER BY
+ * CASE que Prisma no sabe expresar sobre un `where` que arma él mismo.
+ */
+function listExercises(
+  where: Prisma.ExerciseWhereInput,
+  focus: string[],
+  limit: number,
+  offset: number,
+) {
+  if (!focus.length) {
+    return prisma.exercise.findMany({ where, orderBy: BY_MUSCLE, take: limit, skip: offset });
+  }
+
+  const focused: Prisma.ExerciseWhereInput = { AND: [where, { primaryMuscle: { in: focus } }] };
+  // `NOT IN` deja fuera los nulos, así que un ejercicio que el JSON no cubra
+  // desaparecería de la lista en vez de caer al final.
+  const rest: Prisma.ExerciseWhereInput = {
+    AND: [where, { OR: [{ primaryMuscle: null }, { NOT: { primaryMuscle: { in: focus } } }] }],
+  };
+
+  return prisma.exercise.count({ where: focused }).then(async (focusedCount) => {
+    const items =
+      offset < focusedCount
+        ? await prisma.exercise.findMany({
+            where: focused,
+            orderBy: BY_WEIGHT,
+            take: limit,
+            skip: offset,
+          })
+        : [];
+    if (items.length >= limit) return items;
+    const more = await prisma.exercise.findMany({
+      where: rest,
+      orderBy: BY_MUSCLE,
+      take: limit - items.length,
+      skip: Math.max(0, offset - focusedCount),
+    });
+    return [...items, ...more];
+  });
+}
 
 // Exercise count per muscle (target + secondary), for the muscle map.
 // Computed once and cached in memory.

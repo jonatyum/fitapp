@@ -34,12 +34,20 @@ model Exercise {
   attribution      String
   createdAt        DateTime @default(now()) @map("created_at")
 
+  /// Músculo que el ejercicio entrena de verdad, y lo directo que es para él
+  /// (0-10). Sale de data/primary-muscles.json, no del dataset: `target`
+  /// clasifica mal 257 de los 1324 (toda sentadilla como glúteo, todo giro
+  /// como abdomen). Nulo sólo si el JSON no cubre ese id.
+  primaryMuscle    String?  @map("primary_muscle")
+  primaryScore     Int?     @map("primary_score")
+
   routineExercises RoutineExercise[]
   setLogs          SetLog[]
 
   @@index([bodyPart])
   @@index([equipment])
   @@index([target])
+  @@index([primaryMuscle, primaryScore])
   @@map("exercises")
 }
 
