@@ -160,6 +160,13 @@ export interface PoolExercise {
   secondaryMuscles: string[];
   gifUrl: string;
   image: string;
+  /**
+   * Músculo primario ponderado (data/primary-muscles.json). Opcionales porque
+   * un ejercicio que el JSON no cubra sigue siendo programable: sin ellos el
+   * ranking cae al `target` del dataset, que es como funcionaba antes.
+   */
+  primaryMuscle?: string | null;
+  primaryScore?: number | null;
 }
 
 let poolCache: PoolExercise[] | null = null;
@@ -176,6 +183,8 @@ async function loadPool(): Promise<PoolExercise[]> {
         secondaryMuscles: true,
         gifUrl: true,
         image: true,
+        primaryMuscle: true,
+        primaryScore: true,
       },
     });
   }
@@ -257,6 +266,20 @@ const rankOf = (list: string[], equipment: string) => {
   return i === -1 ? 0 : (list.length - i) * 3;
 };
 
+/**
+ * Debajo de esto el ejercicio estira o moviliza el músculo, no lo entrena
+ * («hamstring stretch», «ankle circles»). Coge lo que el filtro por nombre no
+ * ve, que es la mitad de los estiramientos del dataset.
+ */
+const MIN_TRAINABLE_SCORE = 4;
+
+/**
+ * Si el ejercicio entrena el músculo del slot. Con ponderación manda ella; el
+ * `target` del dataset sólo decide cuando el JSON no cubre el ejercicio.
+ */
+const matchesSlot = (ex: PoolExercise, keys: string[]): boolean =>
+  ex.primaryMuscle ? keys.includes(ex.primaryMuscle) : keys.includes(ex.target);
+
 function scoreExercise(
   ex: PoolExercise,
   keys: string[],
@@ -266,9 +289,15 @@ function scoreExercise(
 ): number {
   if (EXCLUDE_RE.test(ex.name)) return -Infinity;
   if (ADVANCED_RE.test(ex.name) && level !== "advanced") return -Infinity;
+  if (ex.primaryScore != null && ex.primaryScore < MIN_TRAINABLE_SCORE) return -Infinity;
 
   // Primary target beats an exercise that only lists the muscle as secondary.
-  let score = keys.includes(ex.target) ? 100 : 40;
+  // Cuál es el primario lo dice la ponderación, no el `target` del dataset:
+  // para un slot de glúteo, éste etiqueta igual un hip thrust que una
+  // sentadilla. Sin ponderación (un ejercicio que el JSON no cubra) el criterio
+  // es el de antes.
+  const weighted = ex.primaryMuscle && keys.includes(ex.primaryMuscle) ? ex.primaryScore : null;
+  let score = weighted != null || (!ex.primaryMuscle && keys.includes(ex.target)) ? 100 : 40;
 
   if (compound) {
     score += COMPOUND_RE.test(ex.name) ? 45 : 0;
@@ -285,7 +314,10 @@ function scoreExercise(
   // Long names are usually oddly specific variants ("standing wide-grip …").
   score -= Math.max(0, ex.name.split(" ").length - 5) * 3;
 
-  return score;
+  // La ponderación escala, no suma: sumándola, un ejercicio que entrena el
+  // slot a medias («clean and press» para glúteo, 7) le ganaba a uno que va
+  // directo (peso muerto, 9) sólo por acumular bonus de patrón y de equipo.
+  return weighted != null ? score * (weighted / 10) : score;
 }
 
 /** Pick at random among the best candidates so re-generating gives variety. */
@@ -362,7 +394,7 @@ export async function alternativesFor(input: AlternativesInput): Promise<Alterna
     .filter(
       (ex) =>
         !excluded.has(ex.id) &&
-        (keys.includes(ex.target) || ex.secondaryMuscles.some((m) => keys.includes(m))),
+        (matchesSlot(ex, keys) || ex.secondaryMuscles.some((m) => keys.includes(m))),
     )
     .map((ex) => ({
       ex,
@@ -372,7 +404,7 @@ export async function alternativesFor(input: AlternativesInput): Promise<Alterna
       // it only ever looks at its top four candidates, where a primary match
       // always wins. A swap menu of 24 reaches far enough down to start
       // offering an elliptical as a substitute for a squat.
-      primary: keys.includes(ex.target),
+      primary: matchesSlot(ex, keys),
       score: scoreExercise(ex, keys, compound, input.level, place),
     }))
     .filter((c) => c.score > -Infinity)
@@ -464,7 +496,7 @@ export async function generateRoutine(input: GenerateInput): Promise<GeneratedRo
       const matches = pool.filter(
         (ex) =>
           !usedInDay.has(ex.id) &&
-          (keys.includes(ex.target) || ex.secondaryMuscles.some((m) => keys.includes(m))),
+          (matchesSlot(ex, keys) || ex.secondaryMuscles.some((m) => keys.includes(m))),
       );
       const available = allowed ? matches.filter((ex) => allowed.has(ex.equipment)) : matches;
 

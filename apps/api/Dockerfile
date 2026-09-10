@@ -10,6 +10,8 @@ RUN npm install
 COPY prisma ./prisma
 COPY tsconfig.json ./
 COPY src ./src
+# Ponderación de músculo primario, que lee el seed.
+COPY data ./data
 
 RUN npx prisma generate
 

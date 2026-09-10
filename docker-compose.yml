@@ -72,6 +72,7 @@ services:
       # source mounts for hot reload (node_modules stays from the image)
       - ./apps/api/src:/app/src
       - ./apps/api/prisma:/app/prisma
+      - ./apps/api/data:/app/data:ro
 
   web:
     build: ./apps/web
