@@ -182,7 +182,7 @@ export async function registerAuth(app: FastifyInstance) {
 
     // Se comprueba en cada entrada, no sólo al crear la cuenta: así quitar a
     // alguien de ALLOWED_EMAILS le cierra la puerta en el siguiente acceso.
-    if (!isAllowedEmail(email)) {
+    if (!(await isAllowedEmail(email))) {
       req.log.info({ email }, "sign-in rejected: not on the closed-beta list");
       return reply.code(403).send({ error: "email_not_allowed" });
     }

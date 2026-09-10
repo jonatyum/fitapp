@@ -9,6 +9,10 @@ import { prisma } from "./db.js";
 // it is imported — hence the dynamic import below.
 process.env.JWT_SECRET = "test-secret";
 process.env.GOOGLE_CLIENT_ID = "test-client-id";
+// Explícito y no heredado: estas pruebas son las del flujo abierto, y un
+// contenedor levantado con la beta encendida las volvía 403 en bloque.
+process.env.CLOSED_BETA = "";
+process.env.ALLOWED_EMAILS = "";
 
 const { registerAuth } = await import("./auth.js");
 

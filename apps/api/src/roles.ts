@@ -13,7 +13,7 @@ export const isRole = (v: unknown): v is Role => ROLES.includes(v as Role);
  * de ascender a nadie, así que el primer admin tiene que venir del entorno.
  * Lista vacía = nadie, que es el default correcto para un deploy que la olvidó.
  */
-const BOOTSTRAP_ADMINS = (process.env.ADMIN_EMAILS ?? "")
+export const BOOTSTRAP_ADMINS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);

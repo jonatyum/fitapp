@@ -87,16 +87,28 @@ Detalles de comportamiento:
 
 ## Beta cerrada
 
-Con `CLOSED_BETA=1` la app entera queda detrás de una sesión de Google y solo
-entran los correos de `ALLOWED_EMAILS`. Se cierra todo salvo `/health`,
+Con `CLOSED_BETA=1` la app entera queda detrás de una sesión de Google. Quién
+entra lo decide la lista de *usuarios de prueba* de Google Cloud, con la
+pantalla de consentimiento en *Testing*. Se cierra todo salvo `/health`,
 `/auth/config`, `/auth/google`, el webhook de cobro y `/media/*` — este último
 porque un `<img src>` no manda cabecera de autorización y el catálogo se
 quedaría sin imágenes.
 
-La lista de *usuarios de prueba* de Google Cloud no basta como autorización:
-publicar la pantalla de consentimiento es un botón de una consola y abriría el
-registro a cualquier cuenta de Google. Por eso la puerta es `ALLOWED_EMAILS`, y
-se comprueba en cada entrada, no solo al crear la cuenta.
+La lista de invitados vive en la tabla `allowed_emails` y **se gestiona desde
+`/admin` → Accesos**: un campo para dar acceso a un correo y un botón para
+quitárselo. `ALLOWED_EMAILS` pasó a ser sólo la semilla que la rellena en cada
+arranque, igual que `ADMIN_EMAILS` con los roles.
+
+Existe porque la lista de verificadores de Google Cloud no es autorización:
+publicar la pantalla de consentimiento es un botón de una consola, sin PR ni
+revisión, y abriría el registro a cualquier cuenta de Google en el mismo
+segundo. Se comprueba en cada entrada, no sólo al crear la cuenta, así que
+quitar un acceso cierra la puerta en el siguiente.
+
+Dos salvavidas contra el bloqueo total, que dejaría el producto sin nadie
+dentro capaz de arreglarlo: **un administrador entra siempre**, esté o no en la
+lista, y una **lista vacía no cierra la puerta** — deja mandar a la de Google
+Cloud, que es como arrancó la beta.
 
 Mientras dura, el correo y la contraseña quedan desactivados (`403
 password_login_disabled`); el código sigue en su sitio y vuelve al apagar el

@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { prisma } from "./db.js";
 import type { RawExercise } from "./types.js";
 import { seedPlans } from "./billing/plans.js";
-import { seedAdmins } from "./roles.js";
+import { BOOTSTRAP_ADMINS, seedAdmins } from "./roles.js";
+import { seedAllowedEmails } from "./beta.js";
 
 // Path to the mounted dataset (see docker-compose: ../exercises-dataset -> /dataset).
 const DATASET_PATH =
@@ -11,6 +12,7 @@ const DATASET_PATH =
 async function main() {
   await seedPlans();
   await seedAdmins();
+  await seedAllowedEmails(BOOTSTRAP_ADMINS);
 
   const existing = await prisma.exercise.count();
   if (existing > 0) {

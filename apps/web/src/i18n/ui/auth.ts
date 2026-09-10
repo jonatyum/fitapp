@@ -40,7 +40,8 @@ export type AuthKey =
   | "noInviteAccounts"
   | "noInviteAsk"
   | "noInviteAskHint"
-  | "noInviteMessage";
+  | "noInviteMessage"
+  | "privacyLink";
 
 export const auth: Record<Lang, Record<AuthKey, string>> = {
   en: {
@@ -88,6 +89,7 @@ export const auth: Record<Lang, Record<AuthKey, string>> = {
     noInviteAsk: "Ask for an invite on WhatsApp",
     noInviteAskHint: "Tell us your Google email. We add accounts by hand, so it can take a day.",
     noInviteMessage: "Hi, I'd like to try Chamani. My Google email is:",
+    privacyLink: "Privacy policy",
   },
   es: {
     signIn: "Iniciar sesión",
@@ -135,5 +137,6 @@ export const auth: Record<Lang, Record<AuthKey, string>> = {
     noInviteAskHint:
       "Dinos tu correo de Google. Damos de alta a mano, así que puede tardar un día.",
     noInviteMessage: "Hola, quiero probar Chamani. Mi correo de Google es:",
+    privacyLink: "Política de privacidad",
   },
 };

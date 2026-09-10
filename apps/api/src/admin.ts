@@ -2,7 +2,10 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "./db.js";
 import { requireAuth, userId } from "./auth.js";
 import { isRole, requireAdmin } from "./roles.js";
+import { CLOSED_BETA, normalizeEmail } from "./beta.js";
 import { entitlementOf } from "./billing/subscriptions.js";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface UserRow {
   id: string;
@@ -95,6 +98,86 @@ export function registerAdmin(app: FastifyInstance) {
       // El rastro de quién cambió qué vive en el log; no hay tabla de auditoría.
       req.log.info({ actor, target: target.id, from: target.role, to: role }, "role changed");
       return publicAdminUser(updated);
+    },
+  );
+
+  // ── Accesos de la beta cerrada ──────────────────────────────────────────
+
+  /**
+   * La lista de invitados, con la cuenta ya creada si la hay. El panel enseña
+   * quién entró y quién sigue sin aparecer, que es lo que dice si una
+   * invitación sirvió de algo.
+   */
+  app.get("/admin/invites", admin, async () => {
+    const invites = await prisma.allowedEmail.findMany({ orderBy: { createdAt: "desc" } });
+    const users = await prisma.user.findMany({
+      where: { email: { in: invites.map((i) => i.email) } },
+      select: { email: true, name: true, createdAt: true },
+    });
+    const byEmail = new Map(users.map((u) => [u.email, u]));
+
+    return {
+      closedBeta: CLOSED_BETA,
+      invites: invites.map((i) => ({
+        email: i.email,
+        invitedBy: i.invitedBy,
+        createdAt: i.createdAt.toISOString(),
+        signedUp: byEmail.get(i.email)?.createdAt.toISOString() ?? null,
+        name: byEmail.get(i.email)?.name ?? null,
+      })),
+    };
+  });
+
+  app.post<{ Body: { email?: string } }>("/admin/invites", admin, async (req, reply) => {
+    const email = normalizeEmail(req.body?.email ?? "");
+    if (!EMAIL_RE.test(email)) return reply.code(400).send({ error: "invalid_email" });
+
+    const exists = await prisma.allowedEmail.findUnique({ where: { email } });
+    if (exists) return reply.code(409).send({ error: "already_invited" });
+
+    const actor = await prisma.user.findUnique({
+      where: { id: userId(req) },
+      select: { email: true },
+    });
+    const invite = await prisma.allowedEmail.create({
+      data: { email, invitedBy: actor?.email ?? null },
+    });
+    req.log.info({ actor: actor?.email, email }, "access granted");
+
+    return reply.code(201).send({
+      email: invite.email,
+      invitedBy: invite.invitedBy,
+      createdAt: invite.createdAt.toISOString(),
+      signedUp: null,
+      name: null,
+    });
+  });
+
+  /**
+   * Retirar un acceso no borra la cuenta ni sus datos: cierra la puerta en el
+   * siguiente inicio de sesión. Un token ya emitido dura hasta 30 días.
+   *
+   * Nadie puede retirarse el suyo, por el mismo motivo que nadie puede
+   * cambiarse el rol: es el error más fácil de cometer y el más caro.
+   */
+  app.delete<{ Params: { email: string } }>(
+    "/admin/invites/:email",
+    admin,
+    async (req, reply) => {
+      const email = normalizeEmail(decodeURIComponent(req.params.email));
+      const actor = await prisma.user.findUnique({
+        where: { id: userId(req) },
+        select: { email: true },
+      });
+      if (actor?.email === email) {
+        return reply.code(409).send({ error: "cannot_revoke_own_access" });
+      }
+
+      const deleted = await prisma.allowedEmail.deleteMany({ where: { email } });
+      if (deleted.count === 0) return reply.code(404).send({ error: "not_found" });
+
+      req.log.info({ actor: actor?.email, email }, "access revoked");
+      return reply.code(204).send();
     },
   );
 }
