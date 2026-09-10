@@ -1,4 +1,5 @@
 import type {
+  AdminInvite,
   AdminPayment,
   AdminUser,
   Alternative,
@@ -274,6 +275,18 @@ export const apiSetUserRole = (id: string, role: string) =>
     method: "PATCH",
     body: JSON.stringify({ role }),
   });
+
+export const apiAdminInvites = () =>
+  request<{ closedBeta: boolean; invites: AdminInvite[] }>("/admin/invites");
+
+export const apiAdminInvite = (email: string) =>
+  request<AdminInvite>("/admin/invites", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+
+export const apiAdminRevokeInvite = (email: string) =>
+  request<void>(`/admin/invites/${encodeURIComponent(email)}`, { method: "DELETE" });
 
 // Subscriptions
 

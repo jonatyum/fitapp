@@ -252,3 +252,16 @@ model Payment {
   @@index([status, createdAt])
   @@map("payments")
 }
+
+/// Quién puede entrar mientras dura la beta cerrada. El correo es la clave
+/// porque la invitación existe antes que la cuenta: se invita a una dirección,
+/// no a un usuario.
+model AllowedEmail {
+  email String @id
+  /// Correo del admin que dio el acceso, o null si vino de la semilla del
+  /// entorno. Es rastro histórico: no se sigue al borrar esa cuenta.
+  invitedBy String?  @map("invited_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("allowed_emails")
+}

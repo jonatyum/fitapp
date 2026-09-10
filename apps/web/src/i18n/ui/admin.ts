@@ -27,6 +27,23 @@ export type AdminKey =
   | "adminRemoveAdminAsk"
   | "adminRoleChanged"
   | "adminSelfRole"
+  | "adminAccess"
+  | "adminAccessLead"
+  | "adminAccessOpen"
+  | "adminInviteLabel"
+  | "adminInvitePlaceholder"
+  | "adminInviteAdd"
+  | "adminInviteAdded"
+  | "adminNoInvites"
+  | "adminInvitePending"
+  | "adminInviteJoined"
+  | "adminInviteBySeed"
+  | "adminInviteBy"
+  | "adminRevoke"
+  | "adminRevokeAsk"
+  | "adminRevoked"
+  | "adminSelfRevoke"
+  | "adminAlreadyInvited"
   | "adminCounts"
   | "adminStatusPending"
   | "adminStatusReview"
@@ -61,6 +78,23 @@ export const admin: Record<Lang, Record<AdminKey, string>> = {
     adminMakeAdminAsk: "Give {name} full access to payments and accounts?",
     adminRemoveAdminAsk: "Take admin access away from {name}?",
     adminRoleChanged: "{name} is now {role}.",
+    adminAccess: "Access",
+    adminAccessLead: "Only these addresses can sign in while the beta is closed.",
+    adminAccessOpen: "The beta is off: anyone with a Google account can sign in, list or no list.",
+    adminInviteLabel: "Email to invite",
+    adminInvitePlaceholder: "name@gmail.com",
+    adminInviteAdd: "Give access",
+    adminInviteAdded: "{email} can now sign in.",
+    adminNoInvites: "Nobody has been invited yet.",
+    adminInvitePending: "Not signed in yet",
+    adminInviteJoined: "Signed in {date}",
+    adminInviteBySeed: "From the environment",
+    adminInviteBy: "Invited by {email}",
+    adminRevoke: "Revoke",
+    adminRevokeAsk: "Revoke access for {email}? Their data stays; they just cannot sign in again.",
+    adminRevoked: "{email} can no longer sign in.",
+    adminSelfRevoke: "You cannot revoke your own access.",
+    adminAlreadyInvited: "That address already has access.",
     adminSelfRole: "You cannot change your own role.",
     adminCounts: "{plans} plans · {sessions} workouts",
     adminStatusPending: "Awaiting transfer",
@@ -95,6 +129,23 @@ export const admin: Record<Lang, Record<AdminKey, string>> = {
     adminMakeAdminAsk: "¿Dar a {name} acceso completo a pagos y cuentas?",
     adminRemoveAdminAsk: "¿Quitarle a {name} el acceso de administración?",
     adminRoleChanged: "{name} ahora es {role}.",
+    adminAccess: "Accesos",
+    adminAccessLead: "Solo estos correos pueden entrar mientras la beta esté cerrada.",
+    adminAccessOpen: "La beta está apagada: entra cualquiera con cuenta de Google, haya lista o no.",
+    adminInviteLabel: "Correo a invitar",
+    adminInvitePlaceholder: "nombre@gmail.com",
+    adminInviteAdd: "Dar acceso",
+    adminInviteAdded: "{email} ya puede entrar.",
+    adminNoInvites: "Todavía no has invitado a nadie.",
+    adminInvitePending: "Aún no ha entrado",
+    adminInviteJoined: "Entró el {date}",
+    adminInviteBySeed: "Desde el entorno",
+    adminInviteBy: "Invitado por {email}",
+    adminRevoke: "Quitar",
+    adminRevokeAsk: "¿Quitar el acceso a {email}? Sus datos siguen ahí; simplemente no podrá volver a entrar.",
+    adminRevoked: "{email} ya no puede entrar.",
+    adminSelfRevoke: "No puedes quitarte tu propio acceso.",
+    adminAlreadyInvited: "Ese correo ya tiene acceso.",
     adminSelfRole: "No puedes cambiar tu propio rol.",
     adminCounts: "{plans} planes · {sessions} entrenamientos",
     adminStatusPending: "Esperando transferencia",

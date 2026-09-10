@@ -94,7 +94,7 @@ resuélvelo antes de desplegar; no fuerces el deploy.
    | `DIRECT_URL` | la direct de Supabase (puerto 5432) |
    | `GOOGLE_CLIENT_ID` | tu client id; obligatorio si `CLOSED_BETA=1` |
    | `CLOSED_BETA` | `1` cierra la app entera detrás de Google; vacío = flujo abierto |
-   | `ALLOWED_EMAILS` | opcional: segunda lista de correos admitidos. Vacía = manda solo Google Cloud |
+   | `ALLOWED_EMAILS` | semilla de la lista de accesos; a partir de ahí se gestiona desde `/admin` |
    | `CORS_ORIGIN` | `https://<tu-usuario>.github.io` (lo tendrás tras §3) |
    | `JWT_SECRET` | lo genera Render solo — no lo toques |
 4. **Deploy**. En cada arranque el contenedor: aplica las migraciones
@@ -228,7 +228,7 @@ Variables en Render (ver `.env.example`):
 | `QR_BANK_NAME`, `QR_ACCOUNT_NAME` | se muestran en las instrucciones |
 | `QR_IMAGE_URL` | URL de la imagen del QR (opcional) |
 | `CLOSED_BETA` | `1` deja la app entera detrás de una sesión de Google. Sin `GOOGLE_CLIENT_ID`, el arranque falla en producción en vez de servir una puerta que no abre |
-| `ALLOWED_EMAILS` | **opcional**: segunda puerta, separada por comas. Vacía —el default— manda solo la lista de verificadores de Google Cloud. No confundir con `ADMIN_EMAILS`, que es una semilla de rol |
+| `ALLOWED_EMAILS` | **semilla** de la lista de accesos, separada por comas: en cada arranque se añaden a `allowed_emails` (nunca se borra nada). A partir de ahí la lista se gestiona desde `/admin` → Accesos. Los correos de `ADMIN_EMAILS` entran también en la semilla, para que quien reparte accesos pueda entrar a repartirlos |
 | `ADMIN_EMAILS` | **semilla** de administradores, separados por comas: en cada arranque asciende esas cuentas al rol `admin`. A partir de ahí manda la columna `role` y los admins se gestionan desde el panel (`/admin`). Nunca degrada a nadie |
 
 Si faltan las dos obligatorias, la pantalla de planes no ofrece ningún medio de

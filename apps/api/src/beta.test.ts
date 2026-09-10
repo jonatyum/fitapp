@@ -11,7 +11,7 @@ import { prisma } from "./db.js";
 process.env.JWT_SECRET = "test-secret";
 process.env.GOOGLE_CLIENT_ID = "test-client-id";
 process.env.CLOSED_BETA = "1";
-process.env.ALLOWED_EMAILS = "Invitada@Ejemplo.BO, otro@ejemplo.bo";
+process.env.ALLOWED_EMAILS = "";
 
 const { registerAuth } = await import("./auth.js");
 
@@ -19,12 +19,15 @@ interface Row {
   id: string;
   email: string;
   name: string;
+  role: string;
   passwordHash: string | null;
   googleId: string | null;
   avatarUrl: string | null;
 }
 
 let rows: Row[] = [];
+/** La lista de invitados, que ahora vive en la base y no en el entorno. */
+let allowed: string[] = [];
 
 const userStore = {
   async findUnique({ where }: { where: Partial<Pick<Row, "id" | "email" | "googleId">> }) {
@@ -37,12 +40,22 @@ const userStore = {
       id: `u${rows.length + 1}`,
       email: data.email!,
       name: data.name!,
+      role: data.role ?? "client",
       passwordHash: data.passwordHash ?? null,
       googleId: data.googleId ?? null,
       avatarUrl: data.avatarUrl ?? null,
     };
     rows.push(row);
     return { ...row };
+  },
+};
+
+const allowedStore = {
+  async findUnique({ where }: { where: { email: string } }) {
+    return allowed.includes(where.email) ? { email: where.email } : null;
+  },
+  async count() {
+    return allowed.length;
   },
 };
 
@@ -70,9 +83,12 @@ const googleUser = (email: string) => ({
 
 beforeEach(() => {
   rows = [];
+  allowed = ["invitada@ejemplo.bo", "otro@ejemplo.bo"];
   googlePayload = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   (prisma as any).user = userStore;
+  (prisma as any).allowedEmail = allowedStore;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 });
 
 describe("closed beta", () => {
@@ -101,6 +117,7 @@ describe("closed beta", () => {
       id: "u1",
       email: "fuera@ejemplo.bo",
       name: "Ana",
+      role: "client",
       passwordHash: null,
       googleId: "google-123",
       avatarUrl: null,
@@ -123,14 +140,30 @@ describe("closed beta", () => {
     }
   });
 
-  it("defers to the Google Cloud list when no allow-list is configured", async () => {
-    // El default: ALLOWED_EMAILS vacía deja pasar a quien Google haya dejado
-    // llegar hasta aquí, que en modo Testing son sólo sus verificadores.
-    const saved = process.env.ALLOWED_EMAILS;
-    process.env.ALLOWED_EMAILS = "";
-    const fresh = await import(`./beta.js?empty=${Date.now()}`);
-    assert.equal(fresh.isAllowedEmail("cualquiera@ejemplo.bo"), true);
-    process.env.ALLOWED_EMAILS = saved;
+  it("never locks out an admin, so there is always someone who can hand out access", async () => {
+    const app = await buildApp();
+    rows.push({
+      id: "u1",
+      email: "jefa@ejemplo.bo",
+      name: "Jefa",
+      role: "admin",
+      passwordHash: null,
+      googleId: "google-123",
+      avatarUrl: null,
+    });
+    googlePayload = googleUser("jefa@ejemplo.bo");
+
+    const res = await post(app, "/auth/google", { credential: "x" });
+    assert.equal(res.statusCode, 200, "un admin entra aunque no esté en la lista");
+  });
+
+  it("leaves the door to Google when the list is empty, instead of locking everyone out", async () => {
+    const app = await buildApp();
+    allowed = [];
+    googlePayload = googleUser("cualquiera@ejemplo.bo");
+
+    const res = await post(app, "/auth/google", { credential: "x" });
+    assert.equal(res.statusCode, 200);
   });
 
   it("tells the client the beta is on and the password form is not", async () => {

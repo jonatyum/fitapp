@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
+  apiAdminInvite,
+  apiAdminInvites,
   apiAdminPayments,
+  apiAdminRevokeInvite,
   apiAdminUsers,
   apiConfirmPayment,
   apiRejectPayment,
@@ -10,7 +13,7 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import type { UIKey } from "../i18n/ui";
-import type { AdminPayment, AdminUser } from "../types";
+import type { AdminInvite, AdminPayment, AdminUser } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Icon } from "./ui/Icon";
 import { useToast } from "./ui/Toast";
@@ -43,18 +46,23 @@ const PLAN_PERIOD: Record<string, UIKey> = {
 type Pending =
   | { kind: "confirm"; payment: AdminPayment }
   | { kind: "reject"; payment: AdminPayment }
-  | { kind: "role"; user: AdminUser; role: string };
+  | { kind: "role"; user: AdminUser; role: string }
+  | { kind: "revoke"; email: string };
 
 export function AdminView() {
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [tab, setTab] = useState<"payments" | "users">("payments");
+  const [tab, setTab] = useState<"payments" | "users" | "invites">("payments");
   const [onlyQueue, setOnlyQueue] = useState(true);
   const [q, setQ] = useState("");
   const [payments, setPayments] = useState<AdminPayment[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [invites, setInvites] = useState<AdminInvite[]>([]);
+  const [closedBeta, setClosedBeta] = useState(true);
+  const [newEmail, setNewEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -65,8 +73,12 @@ export function AdminView() {
     try {
       if (tab === "payments") {
         setPayments(await apiAdminPayments({ q, ...(onlyQueue ? {} : { status: "paid" }) }));
-      } else {
+      } else if (tab === "users") {
         setUsers(await apiAdminUsers(q));
+      } else {
+        const res = await apiAdminInvites();
+        setInvites(res.invites);
+        setClosedBeta(res.closedBeta);
       }
     } catch {
       setFailed(true);
@@ -90,6 +102,9 @@ export function AdminView() {
       } else if (action.kind === "reject") {
         await apiRejectPayment(action.payment.reference);
         toast(t("adminRejected", { ref: action.payment.reference }), "info");
+      } else if (action.kind === "revoke") {
+        await apiAdminRevokeInvite(action.email);
+        toast(t("adminRevoked", { email: action.email }), "info");
       } else {
         const updated = await apiSetUserRole(action.user.id, action.role);
         toast(
@@ -103,7 +118,35 @@ export function AdminView() {
       await load();
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
-      toast(code === "cannot_change_own_role" ? t("adminSelfRole") : t("errGeneric"), "error");
+      const message =
+        code === "cannot_change_own_role"
+          ? t("adminSelfRole")
+          : code === "cannot_revoke_own_access"
+            ? t("adminSelfRevoke")
+            : t("errGeneric");
+      toast(message, "error");
+    }
+  };
+
+  const invite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviting(true);
+    try {
+      const added = await apiAdminInvite(newEmail);
+      setNewEmail("");
+      toast(t("adminInviteAdded", { email: added.email }), "success");
+      await load();
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : "";
+      const message =
+        code === "already_invited"
+          ? t("adminAlreadyInvited")
+          : code === "invalid_email"
+            ? t("errInvalidEmail")
+            : t("errGeneric");
+      toast(message, "error");
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -115,6 +158,7 @@ export function AdminView() {
   const ask = (p: Pending) => {
     if (p.kind === "confirm") return t("adminConfirmAsk", { ref: p.payment.reference });
     if (p.kind === "reject") return t("adminRejectAsk", { ref: p.payment.reference });
+    if (p.kind === "revoke") return t("adminRevokeAsk", { email: p.email });
     return t(p.role === "admin" ? "adminMakeAdminAsk" : "adminRemoveAdminAsk", {
       name: p.user.name,
     });
@@ -141,8 +185,17 @@ export function AdminView() {
           <Icon name="user" size={16} />
           {t("adminUsers")}
         </button>
+        <button
+          className="switch-opt"
+          aria-pressed={tab === "invites"}
+          onClick={() => setTab("invites")}
+        >
+          <Icon name="lock" size={16} />
+          {t("adminAccess")}
+        </button>
       </div>
 
+      {tab !== "invites" && (
       <div className="admin-tools">
         <div className="field grow">
           <label className="field-label sr-only" htmlFor="admin-q">
@@ -167,6 +220,7 @@ export function AdminView() {
           </button>
         )}
       </div>
+      )}
 
       {failed && <p className="status error">{t("loadError")}</p>}
       {loading && !failed && (
@@ -265,6 +319,68 @@ export function AdminView() {
         </ul>
       )}
 
+      {!loading && !failed && tab === "invites" && (
+        <>
+          <p className="hint">{t(closedBeta ? "adminAccessLead" : "adminAccessOpen")}</p>
+
+          <form className="admin-tools" onSubmit={invite}>
+            <div className="field grow">
+              <label className="field-label sr-only" htmlFor="admin-invite">
+                {t("adminInviteLabel")}
+              </label>
+              <input
+                id="admin-invite"
+                type="email"
+                value={newEmail}
+                placeholder={t("adminInvitePlaceholder")}
+                onChange={(e) => setNewEmail(e.target.value)}
+                autoComplete="off"
+                required
+              />
+            </div>
+            <button className="btn primary" disabled={inviting || !newEmail.trim()}>
+              <Icon name="plus" size={18} />
+              {t("adminInviteAdd")}
+            </button>
+          </form>
+
+          <ul className="adminlist">
+            {invites.length === 0 && <li className="status">{t("adminNoInvites")}</li>}
+            {invites.map((i) => (
+              <li key={i.email} className="adminrow">
+                <div className="adminrow-head">
+                  <strong>{i.name ?? i.email}</strong>
+                  <span className={`badge ${i.signedUp ? "brand" : "neutral"}`}>
+                    <Icon name={i.signedUp ? "check-circle" : "alert-circle"} size={12} />
+                    {i.signedUp
+                      ? t("adminInviteJoined", { date: fmtDate(i.signedUp) })
+                      : t("adminInvitePending")}
+                  </span>
+                </div>
+                {i.name && <p className="hint">{i.email}</p>}
+                <p className="hint">
+                  {i.invitedBy
+                    ? t("adminInviteBy", { email: i.invitedBy })
+                    : t("adminInviteBySeed")}{" "}
+                  · {fmtDate(i.createdAt)}
+                </p>
+                {i.email !== user?.email && (
+                  <div className="adminrow-actions">
+                    <button
+                      className="btn danger-ghost"
+                      onClick={() => setPending({ kind: "revoke", email: i.email })}
+                    >
+                      <Icon name="trash" size={18} />
+                      {t("adminRevoke")}
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {pending && (
         <ConfirmDialog
           message={ask(pending)}
@@ -273,7 +389,9 @@ export function AdminView() {
               ? t("adminConfirm")
               : pending.kind === "reject"
                 ? t("adminReject")
-                : t(pending.role === "admin" ? "adminMakeAdmin" : "adminRemoveAdmin")
+                : pending.kind === "revoke"
+                  ? t("adminRevoke")
+                  : t(pending.role === "admin" ? "adminMakeAdmin" : "adminRemoveAdmin")
           }
           onConfirm={() => run(pending)}
           onCancel={() => setPending(null)}

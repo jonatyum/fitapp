@@ -256,6 +256,17 @@ export interface AdminUser {
   sessions: number;
 }
 
+/** Un acceso concedido durante la beta cerrada. */
+export interface AdminInvite {
+  email: string;
+  /** correo del admin que lo concedió, o null si vino de la semilla */
+  invitedBy: string | null;
+  createdAt: string;
+  /** cuándo entró por primera vez; null mientras no haya usado la invitación */
+  signedUp: string | null;
+  name: string | null;
+}
+
 /** Un pago en la cola, con quién lo hizo (null si la cuenta ya no existe). */
 export interface AdminPayment extends Payment {
   user: { email: string; name: string } | null;
