@@ -408,6 +408,7 @@
 .meta-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .steps { counter-reset: step; display: flex; flex-direction: column; }
+.steps-loading { display: flex; flex-direction: column; gap: var(--space-3); }
 .steps li {
   position: relative;
   padding: 0 0 var(--space-4) var(--space-10);

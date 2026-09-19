@@ -4,7 +4,7 @@ import { useI18n } from "../i18n/I18nContext";
 import { translateName } from "../i18n/translateName";
 import { Dialog } from "./ui/Dialog";
 import { Icon } from "./ui/Icon";
-import type { Alternative, Exercise, Level, Place } from "../types";
+import type { Alternative, ExercisePreview, Level, Place } from "../types";
 
 /**
  * Elige el reemplazo de un ejercicio dentro de un plan.
@@ -26,7 +26,7 @@ export function ExerciseSwap({
   onPick,
   onClose,
 }: {
-  current: Exercise;
+  current: ExercisePreview;
   slot: string;
   level: Level;
   equipment: string[];

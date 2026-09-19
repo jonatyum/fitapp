@@ -11,7 +11,7 @@ import { useI18n } from "../i18n/I18nContext";
 import { tGoal, tLevel, tSplit } from "../i18n/plan";
 import { navigate } from "../router";
 import { PATHS } from "../routes";
-import type { Alternative, Exercise, Routine, RoutineSummary } from "../types";
+import type { Alternative, ExercisePreview, Routine, RoutineSummary } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DayCard, type DayExercise } from "./DayCard";
 import { ExerciseSwap } from "./ExerciseSwap";
@@ -22,7 +22,7 @@ export function RoutineView({
   onOpenExercise,
 }: {
   onStartWorkout: (routine: Routine, dayIndex: number) => void;
-  onOpenExercise: (ex: Exercise) => void;
+  onOpenExercise: (ex: ExercisePreview) => void;
 }) {
   const { t, lang } = useI18n();
 
