@@ -4,6 +4,7 @@ import type {
   AdminUser,
   Alternative,
   BillingCatalog,
+  BodyProfileRow,
   CheckoutResult,
   Exercise,
   ExerciseList,
@@ -54,6 +55,14 @@ export async function fetchExercises(filters: ExerciseFilters): Promise<Exercise
 }
 
 export const apiExercise = (id: string) => request<Exercise>(`/exercises/${id}`);
+
+export const apiBodyProfile = () => request<BodyProfileRow | null>("/me/body-profile");
+
+export const apiSaveBodyProfile = (body: BodyProfileRow) =>
+  request<BodyProfileRow>("/me/body-profile", { method: "PUT", body: JSON.stringify(body) });
+
+export const apiDeleteBodyProfile = () =>
+  request<void>("/me/body-profile", { method: "DELETE" });
 
 export const fetchMeta = () => request<Meta>("/meta");
 

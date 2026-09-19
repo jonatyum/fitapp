@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { registerAuth } from "./auth.js";
 import { registerRoutines } from "./routines.js";
 import { registerSessions } from "./sessions.js";
+import { registerBodyProfile } from "./bodyProfile.js";
 import { registerRateLimit, trustProxyOption } from "./rateLimit.js";
 import { registerBilling } from "./billing/routes.js";
 import { registerAdmin } from "./admin.js";
@@ -35,6 +36,7 @@ registerAccessGuard(app);
 await registerAuth(app);
 registerRoutines(app);
 registerSessions(app);
+registerBodyProfile(app);
 await registerBilling(app);
 registerAdmin(app);
 

@@ -181,6 +181,46 @@
   border-color: var(--border);
 }
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-sm);
+}
+/* Sin `sm`: es un control de verdad y baja de 44px si se le deja. */
+.field-help-btn { flex: 0 0 auto; color: var(--text-3); }
+
+.field-unit {
+  position: absolute;
+  right: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+/* ── .disclosure ───────────────────────────────────────────────────────── */
+.disclosure { border-top: 1px solid var(--border); }
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-md);
+  list-style: none;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary > svg {
+  flex: 0 0 auto;
+  color: var(--text-3);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.disclosure[open] > summary > svg { transform: rotate(180deg); }
+
 .field-help {
   font-size: var(--text-xs);
   line-height: 1.4;
