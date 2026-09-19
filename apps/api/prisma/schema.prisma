@@ -74,8 +74,33 @@ model User {
   sessions     WorkoutSession[]
   subscription Subscription?
   payments     Payment[]
+  bodyProfile  BodyProfile?
 
   @@map("users")
+}
+
+/// Los datos corporales de las calculadoras, sólo para quien pide guardarlos
+/// en su cuenta. Sin la fila, viven únicamente en el dispositivo. Todo es
+/// nulable porque la calculadora se usa a trozos: quien sólo quiere su IMC
+/// teclea altura y peso, y nada más.
+model BodyProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  /// female | male
+  sex        String?
+  age        Int?
+  heightCm   Float?   @map("height_cm")
+  weightKg   Float?   @map("weight_kg")
+  neckCm     Float?   @map("neck_cm")
+  waistCm    Float?   @map("waist_cm")
+  hipCm      Float?   @map("hip_cm")
+  restingHr  Int?     @map("resting_hr")
+  bodyFatPct Float?   @map("body_fat_pct")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("body_profiles")
 }
 
 /// A training plan produced by the generator (or edited afterwards).
