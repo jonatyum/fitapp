@@ -7,9 +7,14 @@ import { PATHS } from "../routes";
 import { Icon, type IconName } from "./ui/Icon";
 
 /** Cuarta pestaña: identidad y los destinos que salieron de la barra. */
-const LINKS: { view: "progress" | "calculators" | "billing"; label: UIKey; icon: IconName }[] = [
+const LINKS: {
+  view: "progress" | "calculators" | "guide" | "billing";
+  label: UIKey;
+  icon: IconName;
+}[] = [
   { view: "progress", label: "navProgress", icon: "chart" },
   { view: "calculators", label: "navCalculators", icon: "calculator" },
+  { view: "guide", label: "navGuide", icon: "book" },
   { view: "billing", label: "navPlans", icon: "credit-card" },
 ];
 

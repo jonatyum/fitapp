@@ -12,6 +12,7 @@ import { LanguageMenu } from "./components/LanguageMenu";
 import { AccountMenu } from "./components/AccountMenu";
 import { ExerciseCard, SkeletonCard } from "./components/ExerciseCard";
 import { CalculatorsView } from "./components/CalculatorsView";
+import { GuideView } from "./components/GuideView";
 import { ExerciseDetail } from "./components/ExerciseDetail";
 import { FilterBar, type FilterState } from "./components/FilterBar";
 import { MuscleMap } from "./components/MuscleMap";
@@ -307,6 +308,14 @@ export function App() {
         {view === "calculators" && user && (
           <div className="container narrow">
             <CalculatorsView />
+          </div>
+        )}
+
+        {/* Sin guarda de sesión a propósito: quien todavía no tiene cuenta es
+            justamente quien menos contexto tiene. */}
+        {view === "guide" && (
+          <div className="container narrow">
+            <GuideView />
           </div>
         )}
 
