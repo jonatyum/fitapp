@@ -873,3 +873,116 @@
   font-size: var(--text-xs);
 }
 .gate-note a { color: inherit; }
+
+/* ── Calculadoras ──────────────────────────────────────────────────────── */
+.calculators,
+.calc { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.calc-lead { font-size: var(--text-md); color: var(--text-2); line-height: var(--leading-normal); }
+
+.calc-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.calc-disclaimer > svg { flex: 0 0 auto; margin-top: 2px; color: var(--text-3); }
+
+.calc-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); list-style: none; }
+.calc-card {
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+}
+.calc-card > svg { color: var(--brand-text); }
+.calc-card strong { font-size: var(--text-md); font-weight: var(--weight-bold); }
+.calc-card small { font-size: var(--text-sm); color: var(--text-2); line-height: 1.4; }
+
+.calc-head { display: flex; }
+.calc-form { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
+.calc-prose {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-2);
+}
+.calc-prose + .calc-prose { margin-top: var(--space-3); }
+
+/* El resultado va sobre el formulario: con el teclado abierto, debajo no se ve. */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--brand-soft-border);
+  border-radius: var(--radius-lg);
+  background: var(--brand-soft);
+}
+.result-out { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.result-empty { font-size: var(--text-sm); color: var(--text-2); }
+.result-value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  color: var(--brand-text);
+}
+.result-unit { font-size: var(--text-md); font-weight: var(--weight-regular); color: var(--text-2); }
+.result-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.result-band > svg { flex: 0 0 auto; color: var(--text-3); }
+.result-band span { color: var(--text-2); }
+.result-extras { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.result-extras dt { font-size: var(--text-xs); color: var(--text-3); }
+.result-extras dd { font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.result-aside { font-size: var(--text-sm); line-height: 1.5; color: var(--text-2); }
+.result-aside strong { display: block; color: var(--text); }
+.result-note { font-size: var(--text-xs); line-height: 1.5; color: var(--text-3); }
+
+.calc-profile { gap: var(--space-3); padding: var(--space-4); }
+.calc-profile-summary { font-size: var(--text-md); color: var(--text); }
+
+.calc-wide { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.pcttable { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+.pcttable li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.pcttable-pct { font-size: var(--text-xs); color: var(--text-3); }
+
+.macrobar { display: flex; gap: 2px; height: 10px; overflow: hidden; border-radius: var(--radius-pill); }
+.macrobar-seg { min-width: 4px; border-radius: var(--radius-pill); }
+/* El color no carga la información: cada macro lleva su nombre y su % debajo. */
+.macrobar-seg.protein { background: var(--brand); }
+.macrobar-seg.fat { background: var(--brand-300); }
+.macrobar-seg.carb { background: var(--brand-100); }
+
+.zonelist { display: flex; flex-direction: column; gap: var(--space-2); }
+.zonelist-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border);
+}
+.zonelist-row strong { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.zonelist-row span { font-size: var(--text-sm); color: var(--text); }
+.zonelist-row small { grid-column: 1 / -1; font-size: var(--text-xs); color: var(--text-2); }

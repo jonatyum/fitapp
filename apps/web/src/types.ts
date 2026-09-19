@@ -280,3 +280,16 @@ export interface CheckoutResult {
   payment: Payment;
   charge: Charge;
 }
+
+/** Los datos corporales tal y como viajan al API. Todo nulable a propósito. */
+export interface BodyProfileRow {
+  sex?: "female" | "male" | null;
+  age?: number | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
+  neckCm?: number | null;
+  waistCm?: number | null;
+  hipCm?: number | null;
+  restingHr?: number | null;
+  bodyFatPct?: number | null;
+}

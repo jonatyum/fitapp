@@ -135,3 +135,12 @@
   }
   .gate-title { font-size: var(--text-3xl); }
 }
+
+@media (min-width: 480px) {
+  .calc-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+
+@media (min-width: 768px) {
+  .calc-form { grid-template-columns: 1fr 1fr; }
+  .result-value { font-size: var(--text-4xl); }
+}

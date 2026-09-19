@@ -11,6 +11,7 @@ import { useAuth } from "./auth/AuthContext";
 import { LanguageMenu } from "./components/LanguageMenu";
 import { AccountMenu } from "./components/AccountMenu";
 import { ExerciseCard, SkeletonCard } from "./components/ExerciseCard";
+import { CalculatorsView } from "./components/CalculatorsView";
 import { ExerciseDetail } from "./components/ExerciseDetail";
 import { FilterBar, type FilterState } from "./components/FilterBar";
 import { MuscleMap } from "./components/MuscleMap";
@@ -68,6 +69,7 @@ export function App() {
     else if (view === "routine" && ready && !user) navigate(PATHS.wizard, { replace: true });
     // Los ajustes son de una cuenta: sin sesión, "Yo" es donde se crea.
     else if (view === "settings" && ready && !user) navigate(PATHS.me, { replace: true });
+    else if (view === "calculators" && ready && !user) navigate(PATHS.me, { replace: true });
     // /admin no está enlazada en ningún sitio salvo en "Yo" y sólo para quien
     // tiene el rol; entrar a mano sin él devuelve a Hoy. La autorización de
     // verdad la hace el API en cada petición.
@@ -299,6 +301,12 @@ export function App() {
         {view === "settings" && (
           <div className="container narrow">
             <SettingsView />
+          </div>
+        )}
+
+        {view === "calculators" && user && (
+          <div className="container narrow">
+            <CalculatorsView />
           </div>
         )}
 

@@ -41,6 +41,7 @@ export type IconName =
   | "refresh"
   | "swap"
   | "sliders"
+  | "calculator"
   | "sparkle";
 
 const PATHS: Record<IconName, JSX.Element> = {
@@ -158,6 +159,12 @@ const PATHS: Record<IconName, JSX.Element> = {
   // `refresh`, que significa "regenerar", sino "cambiar esto por otra cosa".
   swap: <path d="M4 8h13M14 5l3 3-3 3M20 16H7m3-3-3 3 3 3" />,
   sliders: <path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M8 15v4" />,
+  calculator: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 7h8M8 12h2m3 0h3M8 16.5h2m3 0h3" />
+    </>
+  ),
   sparkle: <path d="m12 3 2 5.6 5.6 2-5.6 2-2 5.6-2-5.6-5.6-2 5.6-2zM18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />,
 };
 
