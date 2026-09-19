@@ -23,6 +23,7 @@ export function OneRepMaxCalculator() {
       id="onerm"
       result={
         <CalcResult
+          label={t("calcEstimated1rm")}
           value={value === null ? null : Math.round(value).toLocaleString(lang)}
           unit={t("calcUnitKg")}
           note={CALC.onerm.note[lang]}

@@ -21,6 +21,7 @@ export function HeartRateCalculator() {
       id="heartrate"
       result={
         <CalcResult
+          label={t("calcHrMax")}
           value={max === null ? null : Math.round(max).toLocaleString(lang)}
           unit={t("calcUnitBpm")}
           note={CALC.heartrate.note[lang]}

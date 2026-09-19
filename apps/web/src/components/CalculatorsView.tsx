@@ -15,14 +15,19 @@ import { OneRepMaxCalculator } from "./calculators/OneRepMaxCalculator";
 import { TdeeCalculator } from "./calculators/TdeeCalculator";
 import { Icon, type IconName } from "./ui/Icon";
 
+/**
+ * Ninguno se repite y ninguno significa otra cosa en el resto de la app:
+ * `medal` es de logros y `chart` es el de Progreso, que está en la misma
+ * pantalla de "Yo" desde la que se llega aquí.
+ */
 const ICONS: Record<CalculatorId, IconName> = {
   bmi: "body",
   bmr: "flame",
-  tdee: "chart",
-  bodyfat: "sliders",
-  macros: "grid",
+  tdee: "zap",
+  bodyfat: "ruler",
+  macros: "pie",
   onerm: "dumbbell",
-  heartrate: "medal",
+  heartrate: "heart",
 };
 
 const VIEWS: Record<CalculatorId, () => JSX.Element> = {

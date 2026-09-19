@@ -295,18 +295,21 @@ export const ACTIVITY: Record<ActivityId, { name: Row; detail: Row }> = {
   },
 };
 
-export const GOAL: Record<GoalId, { name: Row; detail: Row }> = {
+export const GOAL: Record<GoalId, { name: Row; detail: Row; caption: Row }> = {
   lose: {
     name: { es: "Perder grasa", en: "Lose fat" },
     detail: { es: "20 % por debajo del mantenimiento.", en: "20% below maintenance." },
+    caption: { es: "Come al día para perder grasa", en: "Eat per day to lose fat" },
   },
   maintain: {
     name: { es: "Mantener", en: "Maintain" },
     detail: { es: "Ni subes ni bajas de peso.", en: "Neither gaining nor losing." },
+    caption: { es: "Come al día para mantenerte", en: "Eat per day to maintain" },
   },
   gain: {
     name: { es: "Ganar músculo", en: "Gain muscle" },
     detail: { es: "10 % por encima del mantenimiento.", en: "10% above maintenance." },
+    caption: { es: "Come al día para ganar músculo", en: "Eat per day to gain muscle" },
   },
 };
 

@@ -31,35 +31,24 @@ export function MacrosCalculator() {
       id="macros"
       result={
         <CalcResult
+          label={t("calcMacrosFor")}
           value={split === null ? null : Math.round(kcal!).toLocaleString(lang)}
-          unit={t("calcUnitKcalDay")}
+          unit={t("calcUnitKcal")}
+          extras={rows.map((r) => ({
+            label: `${MACRO[r.id][lang]} · ${Math.round((r.kcal / total) * 100)}%`,
+            value: `${Math.round(r.grams).toLocaleString(lang)} ${t("calcUnitGram")}`,
+          }))}
           note={CALC.macros.note[lang]}
         >
-          {split && (
-            <>
-              <ul className="macrobar" aria-hidden="true">
-                {rows.map((r) => (
-                  <li
-                    key={r.id}
-                    className={`macrobar-seg ${r.id}`}
-                    style={{ flexGrow: r.kcal / total }}
-                  />
-                ))}
-              </ul>
-              <dl className="result-extras">
-                {rows.map((r) => (
-                  <div key={r.id}>
-                    <dt>
-                      {MACRO[r.id][lang]} · {Math.round((r.kcal / total) * 100)}%
-                    </dt>
-                    <dd className="t-num">
-                      {Math.round(r.grams).toLocaleString(lang)} {t("calcUnitGram")}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </>
-          )}
+          <ul className="macrobar" aria-hidden="true">
+            {rows.map((r) => (
+              <li
+                key={r.id}
+                className={`macrobar-seg ${r.id}`}
+                style={{ flexGrow: r.kcal / total }}
+              />
+            ))}
+          </ul>
         </CalcResult>
       }
     >

@@ -198,6 +198,15 @@
   color: var(--text-3);
   pointer-events: none;
 }
+/* Sitio para la unidad, y fuera las flechas del `type=number`: se pintan justo
+   donde va la unidad y en escritorio se montaban encima. */
+.field-control.has-unit input { padding-right: var(--space-10); }
+.field-control.has-unit input::-webkit-outer-spin-button,
+.field-control.has-unit input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+.field-control.has-unit input[type="number"] { appearance: textfield; }
 
 /* ── .disclosure ───────────────────────────────────────────────────────── */
 .disclosure { border-top: 1px solid var(--border); }

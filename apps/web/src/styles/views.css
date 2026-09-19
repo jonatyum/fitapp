@@ -923,6 +923,13 @@
   background: var(--brand-soft);
 }
 .result-out { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.result-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  color: var(--text-2);
+}
+.result-label + .result-value { margin-top: calc(var(--space-2) * -1); }
 .result-empty { font-size: var(--text-sm); color: var(--text-2); }
 .result-value {
   display: flex;
@@ -934,16 +941,18 @@
   color: var(--brand-text);
 }
 .result-unit { font-size: var(--text-md); font-weight: var(--weight-regular); color: var(--text-2); }
+/* El nombre de la banda en una línea y el consejo debajo: en una sola fila que
+   envuelve, la frase larga empujaba al nombre y quedaba un bloque ilegible. */
 .result-band {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--space-2);
   font-size: var(--text-sm);
   color: var(--text);
 }
-.result-band > svg { flex: 0 0 auto; color: var(--text-3); }
-.result-band span { color: var(--text-2); }
+.result-band > svg { grid-row: 1; margin-top: 2px; color: var(--text-3); }
+.result-band strong { grid-column: 2; font-weight: var(--weight-semibold); }
+.result-band span { grid-column: 2; color: var(--text-2); line-height: 1.5; }
 .result-extras { display: flex; flex-wrap: wrap; gap: var(--space-4); }
 .result-extras dt { font-size: var(--text-xs); color: var(--text-3); }
 .result-extras dd { font-size: var(--text-lg); font-weight: var(--weight-semibold); }
@@ -954,7 +963,8 @@
 .calc-profile { gap: var(--space-3); padding: var(--space-4); }
 .calc-profile-summary { font-size: var(--text-md); color: var(--text); }
 
-.calc-wide { display: flex; flex-direction: column; gap: var(--space-2); }
+/* La tabla de porcentajes cruza el formulario de dos columnas de ≥768. */
+.calc-wide { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--space-2); }
 
 .pcttable { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
 .pcttable li {
