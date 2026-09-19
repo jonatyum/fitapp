@@ -28,7 +28,7 @@ export function CalcField({
     <div className="field">
       <FieldLabel id={id} htmlFor={inputId} />
 
-      <div className="field-control">
+      <div className={`field-control${field.unit ? " has-unit" : ""}`}>
         <input
           id={inputId}
           type="number"

@@ -39,7 +39,10 @@ export function TdeeCalculator() {
       : bmrMifflin(sex, weightKg, heightCm, age);
 
   const maintenance = bmrValue === null ? null : tdee(bmrValue, activity);
-  const target = maintenance === null || sex === null ? null : goalKcal(maintenance, goal, sex);
+  const target =
+    maintenance === null || sex === null || bmrValue === null
+      ? null
+      : goalKcal(maintenance, goal, sex, bmrValue);
 
   const kcal = (n: number) => Math.round(n).toLocaleString(lang);
 
@@ -48,10 +51,13 @@ export function TdeeCalculator() {
       id="tdee"
       result={
         <CalcResult
+          label={GOAL[goal].caption[lang]}
           value={target === null ? null : kcal(target.kcal)}
-          unit={t("calcUnitKcalDay")}
+          unit={t("calcUnitKcal")}
+          // Con «mantener», el objetivo ES el mantenimiento: repetir la cifra
+          // debajo es lo que hacía dudar de cuál era cuál.
           extras={
-            maintenance === null
+            maintenance === null || goal === "maintain"
               ? undefined
               : [{ label: t("calcMaintenance"), value: `${kcal(maintenance)} ${t("calcUnitKcal")}` }]
           }
@@ -61,6 +67,26 @@ export function TdeeCalculator() {
         </CalcResult>
       }
     >
+      <CalcChoice
+        id="activity"
+        value={activity}
+        onChange={setActivity}
+        options={ACTIVITY_IDS.map((id) => ({
+          id,
+          name: ACTIVITY[id].name[lang],
+          detail: ACTIVITY[id].detail[lang],
+        }))}
+      />
+      <CalcChoice
+        id="goal"
+        value={goal}
+        onChange={setGoal}
+        options={GOAL_IDS.map((id) => ({
+          id,
+          name: GOAL[id].name[lang],
+          detail: GOAL[id].detail[lang],
+        }))}
+      />
       <CalcChoice
         id="sex"
         value={sex}
@@ -81,26 +107,6 @@ export function TdeeCalculator() {
         value={weightKg}
         onChange={(v) => patch({ weightKg: v })}
         step={0.1}
-      />
-      <CalcChoice
-        id="activity"
-        value={activity}
-        onChange={setActivity}
-        options={ACTIVITY_IDS.map((id) => ({
-          id,
-          name: ACTIVITY[id].name[lang],
-          detail: ACTIVITY[id].detail[lang],
-        }))}
-      />
-      <CalcChoice
-        id="goal"
-        value={goal}
-        onChange={setGoal}
-        options={GOAL_IDS.map((id) => ({
-          id,
-          name: GOAL[id].name[lang],
-          detail: GOAL[id].detail[lang],
-        }))}
       />
     </CalculatorShell>
   );

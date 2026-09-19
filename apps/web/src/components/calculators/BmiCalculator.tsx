@@ -25,6 +25,7 @@ export function BmiCalculator() {
       id="bmi"
       result={
         <CalcResult
+          label={t("calcBmiValue")}
           value={value === null ? null : value.toFixed(1)}
           band={
             band && !minor

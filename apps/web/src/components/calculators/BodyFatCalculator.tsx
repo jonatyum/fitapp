@@ -35,6 +35,7 @@ export function BodyFatCalculator() {
       id="bodyfat"
       result={
         <CalcResult
+          label={t("calcBodyFatValue")}
           value={pct === null ? null : pct.toFixed(1)}
           unit={t("calcUnitPct")}
           band={

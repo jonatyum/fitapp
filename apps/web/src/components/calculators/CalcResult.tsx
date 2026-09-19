@@ -11,10 +11,14 @@ export interface ResultBand {
  * Va encima del formulario a propósito: en un móvil el teclado se come media
  * pantalla, y con el resultado debajo se teclea a ciegas.
  *
+ * `label` no es decorativo. Sin él, el TDEE enseñaba dos cifras en kcal —la
+ * del objetivo arriba y la de mantenimiento debajo— sin decir cuál era cuál.
+ *
  * Sólo se rellena cuando todos los campos necesarios son válidos, así que el
  * lector de pantalla anuncia un resultado y no cada tecla.
  */
 export function CalcResult({
+  label,
   value,
   unit,
   band,
@@ -22,6 +26,7 @@ export function CalcResult({
   note,
   children,
 }: {
+  label: string;
   value: string | null;
   unit?: string;
   band?: ResultBand;
@@ -38,6 +43,7 @@ export function CalcResult({
           <p className="result-empty">{t("calcResultEmpty")}</p>
         ) : (
           <>
+            <p className="result-label">{label}</p>
             <p className="result-value t-num">
               {value}
               {unit && <span className="result-unit">{unit}</span>}
@@ -59,10 +65,12 @@ export function CalcResult({
                 ))}
               </dl>
             )}
-            {children}
           </>
         )}
       </output>
+      {/* Fuera de la región viva: botones y listas largas no tienen que
+          releerse enteros en cada tecla. */}
+      {value !== null && children}
       <p className="result-note">{note}</p>
     </div>
   );

@@ -15,6 +15,12 @@ export type CalculatorsKey =
   | "calcMinorText"
   | "calcKcalFloor"
   | "calcMaintenance"
+  | "calcBmiValue"
+  | "calcAtRest"
+  | "calcBodyFatValue"
+  | "calcMacrosFor"
+  | "calcEstimated1rm"
+  | "calcHrMax"
   | "calcUsesBodyFat"
   | "calcBmrFloorNote"
   | "errCalcRange"
@@ -57,6 +63,12 @@ export const calculators: Record<Lang, Record<CalculatorsKey, string>> = {
       "Below 18, BMI is read against percentiles for age and sex, not against the adult bands. The number above is right; the interpretation belongs to a health professional.",
     calcKcalFloor: "We stop here: eating less than this needs supervision.",
     calcMaintenance: "Maintenance",
+    calcBmiValue: "Your BMI",
+    calcAtRest: "At complete rest",
+    calcBodyFatValue: "Body fat",
+    calcMacrosFor: "Split from your daily calories",
+    calcEstimated1rm: "Estimated 1RM",
+    calcHrMax: "Maximum heart rate",
     calcUsesBodyFat: "Using your body-fat percentage, so this is more accurate.",
     calcBmrFloorNote: "Never eat below this figure.",
     errCalcRange: "Enter a value between {min} and {max}.",
@@ -98,6 +110,12 @@ export const calculators: Record<Lang, Record<CalculatorsKey, string>> = {
       "Por debajo de 18 años el IMC se lee con percentiles de edad y sexo, no con las bandas de adulto. El número de arriba es correcto; la interpretación le toca a un profesional de salud.",
     calcKcalFloor: "Aquí paramos: comer menos que esto necesita supervisión.",
     calcMaintenance: "Mantenimiento",
+    calcBmiValue: "Tu IMC",
+    calcAtRest: "En reposo absoluto",
+    calcBodyFatValue: "Grasa corporal",
+    calcMacrosFor: "Reparto de tus calorías del día",
+    calcEstimated1rm: "1RM estimado",
+    calcHrMax: "Frecuencia cardiaca máxima",
     calcUsesBodyFat: "Usamos tu porcentaje de grasa, así que esto afina más.",
     calcBmrFloorNote: "Nunca comas por debajo de esta cifra.",
     errCalcRange: "Escribe un valor entre {min} y {max}.",

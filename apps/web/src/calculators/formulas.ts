@@ -88,14 +88,22 @@ export const GOAL_FACTORS: Record<GoalId, number> = {
   gain: 1.1,
 };
 
-/** Devuelve las kcal del objetivo y si el suelo tuvo que morder. */
+/**
+ * Las kcal del objetivo, y si el suelo tuvo que morder.
+ *
+ * El suelo es el mayor entre el mínimo por sexo y la propia TMB, porque la
+ * pantalla de TMB dice «nunca comas por debajo de esta cifra»: sin esto, con
+ * una basal de 1292 el déficit podía proponer 1200 y las dos pantallas se
+ * contradecían.
+ */
 export function goalKcal(
   maintenance: number,
   goal: GoalId,
   sex: Sex,
+  bmrValue: number,
 ): { kcal: number; floored: boolean } {
   const target = maintenance * GOAL_FACTORS[goal];
-  const floor = KCAL_FLOOR[sex];
+  const floor = Math.max(KCAL_FLOOR[sex], bmrValue);
   return target < floor ? { kcal: floor, floored: true } : { kcal: target, floored: false };
 }
 

@@ -26,6 +26,7 @@ export function BmrCalculator() {
       id="bmr"
       result={
         <CalcResult
+          label={t("calcAtRest")}
           value={value === null ? null : Math.round(value).toLocaleString(lang)}
           unit={t("calcUnitKcalDay")}
           note={CALC.bmr.note[lang]}
