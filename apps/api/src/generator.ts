@@ -51,8 +51,18 @@ const COMPOUND = new Set([
   "quads",
   "hamstrings",
   "glutes",
-  "spine",
 ]);
+
+/** Trunk work. Goes after the lifts it would otherwise fatigue. */
+const CORE = new Set(["abs", "obliques"]);
+
+/**
+ * Orden canónico de la sesión: compuesto pesado, accesorio, core, cardio. Las
+ * plantillas listan los slots por prioridad —cuáles sobreviven al recorte por
+ * nivel—, que no es el orden en que se entrenan.
+ */
+const phaseOf = (slot: string): number =>
+  slot === "cardio" ? 3 : COMPOUND.has(slot) ? 0 : CORE.has(slot) ? 2 : 1;
 
 interface DayTemplate {
   /** translated in the UI through the `dayLabel` dictionary */
@@ -125,13 +135,27 @@ const BASE_PRESCRIPTION: Record<Goal, Prescription> = {
   fatloss: { sets: 3, repsMin: 12, repsMax: 15, restSec: 45 },
 };
 
-function prescribe(goal: Goal, level: Level, slot: string): Prescription {
+/**
+ * `secondary` es la segunda vez que el día toca ese músculo. El movimiento de
+ * apoyo no se programa como el principal: menos series y, en fuerza, nada de
+ * 4-6 repeticiones otra vez —así el pecho no acumula veinte series pesadas por
+ * semana en el PPL de seis días—.
+ */
+function prescribe(goal: Goal, level: Level, slot: string, secondary = false): Prescription {
   const base = BASE_PRESCRIPTION[goal];
   const isolation = !COMPOUND.has(slot);
   let { sets, repsMin, repsMax, restSec } = base;
 
   if (level === "beginner") sets = Math.max(2, sets - 1);
   if (level === "advanced" && goal !== "strength") sets += 1;
+  if (secondary) {
+    sets = Math.max(2, sets - 1);
+    if (goal === "strength") {
+      repsMin = 6;
+      repsMax = 8;
+      restSec = 120;
+    }
+  }
 
   if (isolation) {
     sets = Math.max(2, sets - 1);
@@ -198,9 +222,22 @@ async function loadPool(): Promise<PoolExercise[]> {
 const EXCLUDE_RE =
   /\b(stretch|stretches|yoga|pose|foam roll|roller|mobility|warm[- ]?up|breathing|scapular|dead hang|hang\b)/i;
 
+/**
+ * Filas que el dataset repite sólo para cambiar el plano de la cámara
+ * («(back pov)», «v. 2»): mismo ejercicio, nombre que delata el catálogo.
+ */
+const DUPLICATE_RE = /\((?:back|side) pov\)|\bv\. ?\d/i;
+
+/** Riesgo sin contrapartida, y aquí nadie corrige la técnica. */
+const UNSAFE_RE = /\bguillotine\b|behind[- ]?(?:the[- ]?)?neck/i;
+
 /** Impressive, but not something to prescribe below an advanced level. */
 const ADVANCED_RE =
   /\b(muscle[- ]up|back lever|front lever|planche|human flag|handstand|iron cross|skin the cat|one arm|single arm|archer|360|windshield)\b/i;
+
+/** Su coste de entrada es la técnica, no la fuerza: no para un primer plan. */
+const TECHNICAL_RE =
+  /\b(sumo|front squat|overhead squat|zercher|clean|snatch|jerk|good morning|upright row|pendlay|pistol)\b/i;
 
 /** Classic multi-joint movement patterns. */
 const COMPOUND_RE =
@@ -287,8 +324,11 @@ function scoreExercise(
   level: Level,
   place: Place,
 ): number {
-  if (EXCLUDE_RE.test(ex.name)) return -Infinity;
+  if (EXCLUDE_RE.test(ex.name) || DUPLICATE_RE.test(ex.name) || UNSAFE_RE.test(ex.name)) {
+    return -Infinity;
+  }
   if (ADVANCED_RE.test(ex.name) && level !== "advanced") return -Infinity;
+  if (TECHNICAL_RE.test(ex.name) && level === "beginner") return -Infinity;
   if (ex.primaryScore != null && ex.primaryScore < MIN_TRAINABLE_SCORE) return -Infinity;
 
   // Primary target beats an exercise that only lists the muscle as secondary.
@@ -319,6 +359,20 @@ function scoreExercise(
   // directo (peso muerto, 9) sólo por acumular bonus de patrón y de equipo.
   return weighted != null ? score * (weighted / 10) : score;
 }
+
+/**
+ * Los patrones de movimiento que ya cubre el ejercicio. Reutiliza las dos
+ * expresiones de patrón en vez de un vocabulario nuevo, y busca todas las
+ * coincidencias porque la primera engaña: en «clean-grip front squat» es
+ * «clean», y lo que repite el patrón de la sentadilla es «squat».
+ */
+const PATTERN_RE = new RegExp(`${COMPOUND_RE.source}|${ISOLATION_RE.source}`, "gi");
+
+const patternsOf = (name: string): string[] =>
+  [...name.matchAll(PATTERN_RE)].map((m) => m[0].toLowerCase().replace(/[- ]/g, ""));
+
+/** Repetir el patrón en el mismo slot no es variar el ángulo: es repetir. */
+const REPEAT_PATTERN_PENALTY = 40;
 
 /** Pick at random among the best candidates so re-generating gives variety. */
 const TOP_K = 4;
@@ -483,10 +537,12 @@ export async function generateRoutine(input: GenerateInput): Promise<GeneratedRo
   const days: GeneratedDay[] = split.days.map((tpl) => {
     const slots = tpl.slots.slice(0, perDay);
     if (input.goal === "fatloss" || input.goal === "endurance") slots.push("cardio");
+    slots.sort((a, b) => phaseOf(a) - phaseOf(b));
 
     // Exercises are unique within a day; across days repeats are fine (and
     // wanted — a 6-day PPL repeats push/pull/legs by design).
     const usedInDay = new Set<string>();
+    const patternsBySlot = new Map<string, Set<string>>();
     const exercises: GeneratedExercise[] = [];
 
     for (const slot of slots) {
@@ -506,16 +562,32 @@ export async function generateRoutine(input: GenerateInput): Promise<GeneratedRo
       // is worse than leaving the slot out.
       const candidates = available.length ? available : place === "home" ? [] : matches;
 
+      const seen = patternsBySlot.get(slot);
       const ranked = candidates
-        .map((ex) => ({ ex, score: scoreExercise(ex, keys, compound, input.level, place) }))
+        .map((ex) => {
+          const patterns = patternsOf(ex.name);
+          const score = scoreExercise(ex, keys, compound, input.level, place);
+          return {
+            ex,
+            patterns,
+            primary: matchesSlot(ex, keys),
+            score: patterns.some((p) => seen?.has(p)) ? score - REPEAT_PATTERN_PENALTY : score,
+          };
+        })
         .filter((c) => c.score > -Infinity)
-        .sort((a, b) => b.score - a.score)
+        .sort((a, b) => Number(b.primary) - Number(a.primary) || b.score - a.score)
         .slice(0, TOP_K);
       if (!ranked.length) continue;
 
-      const best = ranked[Math.floor(Math.random() * ranked.length)].ex;
-      usedInDay.add(best.id);
-      exercises.push({ slot, exercise: best, ...prescribe(input.goal, input.level, slot) });
+      const pick = ranked[Math.floor(Math.random() * ranked.length)];
+      usedInDay.add(pick.ex.id);
+      patternsBySlot.set(slot, new Set([...(seen ?? []), ...pick.patterns]));
+      const repeat = exercises.some((e) => e.slot === slot);
+      exercises.push({
+        slot,
+        exercise: pick.ex,
+        ...prescribe(input.goal, input.level, slot, repeat),
+      });
     }
 
     return {
