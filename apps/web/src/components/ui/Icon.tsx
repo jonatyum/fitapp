@@ -42,6 +42,7 @@ export type IconName =
   | "swap"
   | "sliders"
   | "calculator"
+  | "book"
   | "heart"
   | "ruler"
   | "pie"
@@ -163,6 +164,12 @@ const PATHS: Record<IconName, JSX.Element> = {
   // `refresh`, que significa "regenerar", sino "cambiar esto por otra cosa".
   swap: <path d="M4 8h13M14 5l3 3-3 3M20 16H7m3-3-3 3 3 3" />,
   sliders: <path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M8 15v4" />,
+  book: (
+    <>
+      <path d="M4 4.5h6a2.5 2.5 0 0 1 2 2.2V20a2 2 0 0 0-1.8-1.5H4z" />
+      <path d="M20 4.5h-6a2.5 2.5 0 0 0-2 2.2V20a2 2 0 0 1 1.8-1.5H20z" />
+    </>
+  ),
   heart: <path d="M12 20s-7.5-4.6-7.5-9.4A4.1 4.1 0 0 1 12 7.8a4.1 4.1 0 0 1 7.5 2.8c0 4.8-7.5 9.4-7.5 9.4Z" />,
   ruler: (
     <>

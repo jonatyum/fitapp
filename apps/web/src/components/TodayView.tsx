@@ -8,6 +8,7 @@ import { navigate } from "../router";
 import { PATHS } from "../routes";
 import { PaywallDialog } from "./PaywallDialog";
 import type { Routine, RoutineDay, StatsSummary, WorkoutSession } from "../types";
+import { GuideInvite } from "./GuideInvite";
 import { Icon } from "./ui/Icon";
 
 /** Trabajo por serie, aparte del descanso prescrito. Sostiene un "≈", no más. */
@@ -129,6 +130,8 @@ export function TodayView({
           </button>
         </section>
 
+        <GuideInvite />
+
         {!user && (
           <p className="auth-switch">
             {t("haveAccount")}{" "}
@@ -178,6 +181,8 @@ export function TodayView({
           {t("todaySeePlan")}
         </button>
       </section>
+
+      <GuideInvite />
 
       {summary && (
         <>
