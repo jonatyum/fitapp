@@ -3,7 +3,7 @@ import { apiDeleteSession, apiSaveSession, apiStartSession, mediaUrl, type SetIn
 import { useI18n } from "../i18n/I18nContext";
 import { tDayLabel } from "../i18n/plan";
 import { translateName } from "../i18n/translateName";
-import type { Exercise, Routine, WorkoutSession } from "../types";
+import type { ExercisePreview, Routine, WorkoutSession } from "../types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Icon } from "./ui/Icon";
 
@@ -32,7 +32,7 @@ export function WorkoutLogger({
   onDone: () => void;
   onCancel: () => void;
   /** Opens the exercise detail card (tap the photo/name while training). */
-  onOpenExercise?: (ex: Exercise) => void;
+  onOpenExercise?: (ex: ExercisePreview) => void;
 }) {
   const { t, lang } = useI18n();
   const day = routine.days[dayIndex];

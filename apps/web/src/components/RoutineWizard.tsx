@@ -11,7 +11,16 @@ import {
   tLevelDesc,
   tSplit,
 } from "../i18n/plan";
-import type { Alternative, GeneratedRoutine, Goal, Level, Meta, Place, Routine } from "../types";
+import type {
+  Alternative,
+  ExercisePreview,
+  GeneratedRoutine,
+  Goal,
+  Level,
+  Meta,
+  Place,
+  Routine,
+} from "../types";
 import { DayCard, type DayExercise } from "./DayCard";
 import { ExerciseSwap } from "./ExerciseSwap";
 import { Icon, type IconName } from "./ui/Icon";
@@ -53,11 +62,14 @@ export function RoutineWizard({
   meta,
   onSaved,
   onCancel,
+  onOpenExercise,
   onRequireAuth,
 }: {
   meta: Meta | null;
   onSaved: (routine: Routine) => void;
   onCancel: () => void;
+  /** Ver la ficha de un ejercicio del plan antes de guardarlo. */
+  onOpenExercise: (ex: ExercisePreview) => void;
   /** El plan se arma sin cuenta; guardarlo sí la exige. */
   onRequireAuth: () => void;
 }) {
@@ -371,6 +383,7 @@ export function RoutineWizard({
                 key={i}
                 day={d}
                 index={i}
+                onOpenExercise={onOpenExercise}
                 onSwap={(e, position) => setSwapping({ dayIndex: i, position, current: e })}
               />
             ))}

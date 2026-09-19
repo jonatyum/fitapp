@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchMeta, fetchMuscleCounts } from "./api";
 import type { UIKey } from "./i18n/ui";
-import type { Exercise, Meta, Routine } from "./types";
+import type { ExercisePreview, Meta, Routine } from "./types";
 import { useI18n } from "./i18n/I18nContext";
 import { navigate, usePath } from "./router";
 import { PATHS, VIEW_BY_PATH, type View } from "./routes";
@@ -49,7 +49,7 @@ export function App() {
 
   const [meta, setMeta] = useState<Meta | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [selected, setSelected] = useState<Exercise | null>(null);
+  const [selected, setSelected] = useState<ExercisePreview | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   /** lista o cuerpo: dos pieles del mismo catálogo */
   const [mode, setMode] = useState<"list" | "body">("list");
@@ -262,6 +262,7 @@ export function App() {
           <div className="container narrow">
             <RoutineWizard
               meta={meta}
+              onOpenExercise={setSelected}
               onRequireAuth={() => setAuthOpen(true)}
               onCancel={() => navigate(user ? PATHS.routine : PATHS.today)}
               onSaved={() => navigate(PATHS.routine)}

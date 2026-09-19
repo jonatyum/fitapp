@@ -3,11 +3,11 @@ import { useI18n } from "../i18n/I18nContext";
 import { tDayLabel } from "../i18n/plan";
 import { translateName } from "../i18n/translateName";
 import { Icon } from "./ui/Icon";
-import type { Exercise, Prescription } from "../types";
+import type { ExercisePreview, Prescription } from "../types";
 
 export interface DayExercise extends Prescription {
   slot: string;
-  exercise: Exercise;
+  exercise: ExercisePreview;
 }
 
 export interface DayLike {
@@ -31,7 +31,7 @@ export function DayCard({
   day: DayLike;
   index: number;
   onStart?: () => void;
-  onOpenExercise?: (ex: Exercise) => void;
+  onOpenExercise?: (ex: ExercisePreview) => void;
   /** cuando se pasa, cada ejercicio ofrece cambiarse por una alternativa */
   onSwap?: (e: DayExercise, position: number) => void;
   /** id del ejercicio que se está cambiando ahora mismo */

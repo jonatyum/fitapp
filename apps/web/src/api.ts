@@ -53,6 +53,8 @@ export async function fetchExercises(filters: ExerciseFilters): Promise<Exercise
   return request<ExerciseList>(`/exercises?${params.toString()}`);
 }
 
+export const apiExercise = (id: string) => request<Exercise>(`/exercises/${id}`);
+
 export const fetchMeta = () => request<Meta>("/meta");
 
 /** Exercise count per muscle (target + secondary), for the muscle map. */

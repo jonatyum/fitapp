@@ -1,16 +1,24 @@
-export interface Exercise {
+/**
+ * Lo que el generador manda de cada ejercicio. El plan lleva hasta 48 y las
+ * instrucciones van en dos idiomas, así que el catálogo entero no cabe en la
+ * respuesta: la ficha completa se pide por id al abrirla.
+ */
+export interface ExercisePreview {
   id: string;
   name: string;
-  category: string;
   bodyPart: string;
   equipment: string;
   target: string;
-  muscleGroup: string;
   secondaryMuscles: string[];
-  instructions: Record<string, string>;
-  instructionSteps: Record<string, string[]>;
   image: string;
   gifUrl: string;
+}
+
+export interface Exercise extends ExercisePreview {
+  category: string;
+  muscleGroup: string;
+  instructions: Record<string, string>;
+  instructionSteps: Record<string, string[]>;
   mediaId: string;
   attribution: string;
 }
@@ -55,7 +63,7 @@ export interface Prescription {
 /** An exercise inside a generated (not yet saved) plan. */
 export interface GeneratedExercise extends Prescription {
   slot: string;
-  exercise: Exercise;
+  exercise: ExercisePreview;
 }
 
 export interface GeneratedDay {
@@ -113,15 +121,7 @@ export type Place = "gym" | "home";
  * A candidate to take over a slot. Carries only what the swap list renders,
  * plus whether it can be done with the kit the plan was built for.
  */
-export interface Alternative {
-  id: string;
-  name: string;
-  target: string;
-  equipment: string;
-  bodyPart: string;
-  secondaryMuscles: string[];
-  gifUrl: string;
-  image: string;
+export interface Alternative extends ExercisePreview {
   fitsKit: boolean;
 }
 
